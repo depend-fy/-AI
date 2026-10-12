@@ -470,6 +470,42 @@ def test_distinct_reviewer_upgrades_to_multi_provider() -> None:
     assert settings.run_mode is RunMode.MULTI_PROVIDER
 
 
+def test_same_vendor_other_model_can_reuse_the_main_key() -> None:
+    """同一家的另一个模型（deepseek-chat → deepseek-reasoner）不必重复填密钥。"""
+    settings = make_settings(
+        llm_provider="deepseek",
+        llm_api_key="sk-" + "x" * 20,
+        llm_reviewer_provider="deepseek",
+        llm_reviewer_model="deepseek-reasoner",
+    )
+    assert settings.reviewer_is_distinct is True
+    assert settings.run_mode is RunMode.MULTI_PROVIDER
+
+
+def test_reviewer_same_as_main_model_is_not_distinct() -> None:
+    settings = make_settings(
+        llm_provider="deepseek",
+        llm_api_key="sk-" + "x" * 20,
+        llm_reviewer_provider="deepseek",
+        llm_reviewer_model="deepseek-chat",
+    )
+    assert settings.reviewer_is_distinct is False
+    assert settings.run_mode is RunMode.SINGLE_MODEL_MULTI_ROLE
+
+
+def test_cross_vendor_reviewer_requires_its_own_key() -> None:
+    """跨厂商时不能拿主模型的密钥去用（那会直接 401）。"""
+    settings = make_settings(
+        llm_provider="deepseek",
+        llm_api_key="sk-" + "x" * 20,
+        llm_reviewer_provider="zhipu",
+        llm_reviewer_model="glm-4-plus",
+        llm_reviewer_api_key="",
+    )
+    assert settings.reviewer_is_distinct is False
+    assert settings.run_mode is RunMode.SINGLE_MODEL_MULTI_ROLE
+
+
 def test_llm_config_summary_contains_no_real_key() -> None:
     settings = make_settings(llm_provider="deepseek", llm_api_key="sk-abcdefghijklmnop")
     summary = settings.llm_config_summary()

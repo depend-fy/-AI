@@ -1,13 +1,13 @@
-"""验证大模型密钥与连通性（只做一次极小调用，成本可忽略）。
+"""验证大模型密钥与连通性（只做一两次极小调用，成本可忽略）。
 
 用法（在项目根目录）：
     .\\.venv\\Scripts\\python.exe scripts\\check_llm.py
     .\\.venv\\Scripts\\python.exe scripts\\check_llm.py --no-call   # 只看配置，不发请求、不花钱
 
 它会：
-    1. 打印当前配置（**密钥只显示脱敏值，绝不打印明文**）；
-    2. 检查 provider 与密钥是否匹配（provider=mock 时密钥不会被使用，会明确提示）；
-    3. 发一次最小请求（max_tokens 很小），报告延迟、token 用量与模型回复；
+    1. 打印主模型与**独立复核员**的配置（密钥只显示脱敏值，绝不打印明文）；
+    2. 检查 provider 与密钥是否匹配、复核员是否构成"真正独立"；
+    3. 各发一次最小请求（max_tokens 很小），报告延迟、token 用量与模型回复；
     4. 针对 401 / 402 / 404 / 超时 / 网络不可达给出中文处理建议。
 """
 
@@ -49,7 +49,7 @@ _ERROR_HINTS = {
 
 
 def describe_config(settings: Settings) -> None:
-    print("【当前配置】")
+    print("【主模型（拆解 / 事实审查 / 修正 都用它）】")
     print(f"{_OK} provider   : {settings.llm_provider}")
     print(f"{_OK} model      : {settings.llm_model}")
     print(f"{_OK} base_url   : {settings.llm_base_url}")
@@ -57,31 +57,49 @@ def describe_config(settings: Settings) -> None:
     print(f"{_OK} 运行模式    : {settings.run_mode.value}")
     print(f"{_OK} 超时/重试   : {settings.llm_timeout_seconds}s / {settings.llm_max_retries} 次")
 
+    print()
+    print("【独立复核员（只用于复核修正；没配就由主模型兼任）】")
+    if settings.reviewer_is_distinct:
+        print(f"{_OK} provider   : {settings.llm_reviewer_provider}")
+        print(f"{_OK} model      : {settings.llm_reviewer_model}")
+        print(f"{_OK} base_url   : {settings.llm_reviewer_base_url or settings.llm_base_url}")
+        print(f"{_OK} API Key    : {settings.masked_reviewer_api_key}")
+        print(f"{_OK} 结论        : 已构成**真正的独立复核**（运行模式：{settings.run_mode.value}）")
+    else:
+        print(f"{_WARN} 未单独配置 → 复核由主模型兼任，报告里会如实标注「复核独立性有限」。")
+        print("        要升级为多模型协同，请在 .env 填 VERIMIND_LLM_REVIEWER_PROVIDER 与")
+        print("        VERIMIND_LLM_REVIEWER_MODEL（跨厂商时还要填 VERIMIND_LLM_REVIEWER_API_KEY）。")
+
     if (settings.llm_provider or "").strip().lower() in _KEYLESS:
         print()
-        print(f"{_WARN} provider 是「{settings.llm_provider}」，密钥**不会**被使用。")
+        print(f"{_WARN} 主模型 provider 是「{settings.llm_provider}」，密钥**不会**被使用。")
         print("        要用真实模型，请把 .env 里的 VERIMIND_LLM_PROVIDER 改成供应商名")
         print("        （deepseek / zhipu / moonshot / dashscope / openai），然后重启服务。")
     for message in settings.runtime_warnings:
         print(f"{_WARN} {message}")
 
 
-def call_model(settings: Settings) -> bool:
-    """发一次最小请求，验证凭据与连通性。返回是否成功。"""
+def call_endpoint(
+    settings: Settings,
+    *,
+    label: str,
+    base_url: str,
+    api_key: str,
+    model: str,
+    timeout: float | None = None,
+) -> bool:
+    """对一个 OpenAI 兼容端点发一次最小请求，验证凭据与连通性。"""
     try:
         from openai import OpenAI
     except ImportError:
         print(f"{_FAIL} 没有安装 openai 库：python -m pip install -r requirements.txt")
         return False
 
-    print()
-    print("【连通性测试】发送一次最小请求（max_tokens=32，成本可忽略）…")
-
     client = OpenAI(
-        api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
-        timeout=float(settings.llm_timeout_seconds),
-        max_retries=0,  # 这里手动控制重试，方便看到真实错误
+        api_key=api_key,
+        base_url=base_url,
+        timeout=timeout or float(settings.llm_timeout_seconds),
+        max_retries=0,  # 手动控制重试，方便看到真实错误
     )
     messages = [
         {"role": "system", "content": "你是一个测试用的助手，只输出 JSON。"},
@@ -91,7 +109,7 @@ def call_model(settings: Settings) -> bool:
     started = time.perf_counter()
     try:
         response = client.chat.completions.create(
-            model=settings.llm_model,
+            model=model,
             messages=messages,  # type: ignore[arg-type]
             max_tokens=32,
             temperature=0,
@@ -100,17 +118,15 @@ def call_model(settings: Settings) -> bool:
     except Exception as exc:  # noqa: BLE001 - 要把任何异常翻译成人话
         latency_ms = int((time.perf_counter() - started) * 1000)
         status = getattr(exc, "status_code", None)
-        print(f"{_FAIL} 调用失败（{type(exc).__name__}，{latency_ms} ms）")
+        print(f"{_FAIL} {label} 调用失败（{type(exc).__name__}，{latency_ms} ms）")
         if status is not None:
             print(f"        HTTP {status}：{_ERROR_HINTS.get(status, '未知错误码')}")
-            if status == 404 and "response_format" in str(exc):
-                print("        提示：该供应商可能不支持 response_format=json_object。")
         else:
             text = str(exc)
             if "timeout" in type(exc).__name__.lower() or "timed out" in text.lower():
                 print("        请求超时：检查网络，或把 VERIMIND_LLM_TIMEOUT_SECONDS 调大。")
             elif "connection" in type(exc).__name__.lower() or "connect" in text.lower():
-                print("        无法连接：检查网络、代理设置，或确认 VERIMIND_LLM_BASE_URL 是否正确。")
+                print("        无法连接：检查网络、代理设置，或确认 base_url 是否正确。")
             else:
                 print(f"        {text[:300]}")
         return False
@@ -118,7 +134,7 @@ def call_model(settings: Settings) -> bool:
     latency_ms = int((time.perf_counter() - started) * 1000)
     content = (response.choices[0].message.content or "").strip()
     usage = response.usage
-    print(f"{_OK} 调用成功")
+    print(f"{_OK} {label} 调用成功")
     print(f"        延迟      : {latency_ms} ms")
     print(f"        模型返回  : {content[:200]}")
     if usage is not None:
@@ -127,6 +143,30 @@ def call_model(settings: Settings) -> bool:
             f" / 合计 {usage.total_tokens}"
         )
     return True
+
+
+def call_model(settings: Settings) -> bool:
+    print()
+    print("【连通性测试】发送一次最小请求（max_tokens=32，成本可忽略）…")
+    return call_endpoint(
+        settings,
+        label="主模型",
+        base_url=settings.llm_base_url,
+        api_key=settings.llm_api_key,
+        model=settings.llm_model,
+    )
+
+
+def call_reviewer(settings: Settings) -> bool:
+    print()
+    print("【复核员连通性测试】再发一次最小请求（验证第二家模型是否真的可用）…")
+    return call_endpoint(
+        settings,
+        label="独立复核员",
+        base_url=settings.llm_reviewer_base_url or settings.llm_base_url,
+        api_key=(settings.llm_reviewer_api_key or settings.llm_api_key),
+        model=settings.llm_reviewer_model,
+    )
 
 
 def main() -> int:
@@ -157,11 +197,19 @@ def main() -> int:
         return 0
 
     ok = call_model(settings)
+    reviewer_ok = True
+    if settings.reviewer_is_distinct:
+        reviewer_ok = call_reviewer(settings)
+
     print("=" * 68)
-    if ok:
-        print("结论：密钥可用，可以在阶段 3 接入真实模型调用。")
+    if ok and reviewer_ok:
+        if settings.reviewer_is_distinct:
+            print("结论：主模型与独立复核员都可用 → 复核是真正独立的（多模型协同）。")
+        else:
+            print("结论：主模型可用。复核目前由主模型兼任；")
+            print("      如需真正独立的复核，请在 .env 配置 VERIMIND_LLM_REVIEWER_* 后重跑本脚本。")
         return 0
-    print("结论：调用失败，请按上面的建议处理后重试。")
+    print("结论：有调用失败，请按上面的建议处理后重试。")
     return 1
 
 

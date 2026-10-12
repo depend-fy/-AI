@@ -96,16 +96,29 @@ class Settings(BaseSettings):
 
     @property
     def reviewer_is_distinct(self) -> bool:
-        """独立复核员是否配置成了一个"真的不同"的模型。"""
+        """独立复核员是否配置成了一个"真的不同"的模型。
+
+        只要 provider 或 model 有一个与主模型不同就算不同——这意味着：
+            · 换一家厂商（最独立）；
+            · 或者同一家的另一个模型（例如 deepseek-chat → deepseek-reasoner）。
+        同一家的另一个模型可以**复用主密钥**，不必重复填一遍。
+        """
         provider = (self.llm_reviewer_provider or "").strip().lower()
         model = (self.llm_reviewer_model or "").strip()
         if not provider or not model:
             return False
+
+        main_provider = self.llm_provider.strip().lower()
+        different = provider != main_provider or model != self.llm_model
+        if not different:
+            return False  # 和主模型完全一样，那就不叫独立了
+
         if provider in _KEYLESS_PROVIDERS:
-            return provider != self.llm_provider.lower() or model != self.llm_model
-        has_key = bool(self.llm_reviewer_api_key.strip())
-        different = provider != self.llm_provider.lower() or model != self.llm_model
-        return has_key and different
+            return True
+        if self.llm_reviewer_api_key.strip():
+            return True
+        # 同一家厂商 → 复用主模型密钥；跨厂商则必须单独提供密钥
+        return provider == main_provider and bool(self.llm_api_key.strip())
 
     @property
     def run_mode(self) -> RunMode:
