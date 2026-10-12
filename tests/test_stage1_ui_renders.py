@@ -59,17 +59,26 @@ def test_home_page_shows_real_project_info() -> None:
     assert "尚未接入" in info_text
 
 
-def test_evaluation_page_is_still_an_honest_placeholder() -> None:
-    """尚未实现的页面必须显式声明"本页尚未实现"，不允许显示编造的数据。
+def test_evaluation_page_shows_the_labeled_dataset() -> None:
+    """评测页必须能真实渲染，并把"标注是谁做的"如实展示出来。
 
-    阶段 2 之后，工作台与报告页已经实现；「评测」页要到阶段 6 才有真实数据，
-    因此这里只对它做断言。
+    注意：这一页**不会**在打开时自动运行评测（那会直接花钱），
+    因此这里断言"只有概览卡片、还没有指标卡片"。
     """
     script = "pages/3_评测.py"
-    app = AppTest.from_file(str(PROJECT_ROOT / script), default_timeout=120)
+    app = AppTest.from_file(str(PROJECT_ROOT / script), default_timeout=180)
     app.run()
-    info_text = "\n".join(element.value for element in app.info)
-    assert "尚未实现" in info_text, f"{script} 没有说明自己是占位页"
+    assert not app.exception
+
+    markdown_all = "\n".join(element.value for element in app.markdown)
+    assert "测试集概览" in markdown_all
+    assert "AI 起草" in markdown_all, "AI 起草的标注必须明写，不能含糊成「人工标注」"
+
+    labels = [element.label for element in app.metric]
+    assert "用例总数" in labels
+    assert "检测精确率" not in labels, "没点运行之前不应出现任何指标数字"
+
+    assert any(button.key == "run_evaluation" for button in app.button)
 
 
 def test_implemented_pages_do_not_claim_to_be_placeholders() -> None:

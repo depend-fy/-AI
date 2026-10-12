@@ -1,39 +1,303 @@
-"""评测：在小规模人工标注集上展示系统的真实表现。
+"""评测：在人工标注测试集上给出**真实跑出来**的指标。
 
-阶段 1 状态：占位页。阶段 6 实现（需要先有可跑通的全流程与人工标注数据）。
+这一页的三条纪律（写在代码里，也写在页面上）：
+    1. 数字只能来自真实运行：点「运行评测」才会跑，跑完把逐条结果与指标一起展示；
+    2. 样本量、标注者身份、同源偏差、失败案例全部显示，不做任何粉饰；
+    3. 分母为 0 的指标显示「—」，绝不拿 0 或 100% 去凑一个好看的表格。
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pandas as pd
 import streamlit as st
 
-from verimind.ui.theme import placeholder_page
+from verimind.core.config import Settings
+from verimind.core.enums import STATUS_DISPLAY_ORDER
+from verimind.core.errors import VeriMindError
+from verimind.evaluation.dataset import categories, load_golden_set
+from verimind.evaluation.runner import (
+    BASELINE_B1,
+    BASELINE_B2,
+    EvaluationReport,
+    offline_settings,
+    run_evaluation,
+)
+from verimind.ui.theme import badge, render_config_warnings, render_run_mode_banner
 
 st.set_page_config(page_title="评测 · 智鉴 AI", page_icon="📈", layout="wide")
 
-placeholder_page(
-    title="📈 评测",
-    planned_stage="阶段 6（测试与 Demo 完善）",
-    will_do=[
-        "测试集说明：规模、覆盖类型（正确事实 / 明确错误 / 虚构文献 / 真实文献错误引用 / "
-        "证据不足 / 来源冲突 / 修正后仍错误）、标注方式与标注者信息",
-        "混淆矩阵与主张级指标：精确率、召回率、F1、**误报率（FPR）**",
-        "引用真实性识别表现：存在 / 不存在 / 未找到 三分类混淆矩阵",
-        "证据支持关系判断表现：支持 / 反驳 / 证据不足",
-        "修正相关指标：修正成功率、修正后剩余错误率、新增错误率",
-        "证据可追溯率、平均响应时间、单次检测成本（由真实调用日志统计）",
-        "基线对比表：B0 原模型自检 / B1 单模型无检索检测 / B2 证据增强（本项目）",
-        "失败案例清单（如实列出，不隐藏）",
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
+
+settings = Settings()
+
+st.title("📈 评测")
+st.caption(
+    "在人工标注测试集上真实跑一遍完整流程，给出主张级指标、失败案例与实验说明。"
+    "所有数字都来自运行结果，**不做任何粉饰**。"
+)
+
+render_run_mode_banner(settings)
+render_config_warnings(settings)
+
+# ---------------------------------------------------------------- 标注集
+try:
+    cases = load_golden_set(GOLDEN_PATH)
+except (FileNotFoundError, ValueError) as exc:
+    st.error(f"读取标注集失败：{exc}")
+    st.stop()
+
+category_list = categories(cases)
+ai_labelled = sum(1 for case in cases if case.labeler_is_ai)
+
+st.markdown("#### 📚 测试集概览")
+stat_cols = st.columns(4)
+stat_cols[0].metric("用例总数", len(cases))
+stat_cols[1].metric("覆盖类别", len(category_list))
+stat_cols[2].metric("AI 起草标注", ai_labelled)
+stat_cols[3].metric("已人工确认", len(cases) - ai_labelled)
+
+st.markdown(
+    badge(f"来源：{GOLDEN_PATH.name}", fg="#3a5a8c", bg="#eef3fb", border="#b9cbe8")
+    + badge(
+        f"AI 起草 {ai_labelled} 条，待人工抽查确认" if ai_labelled else "全部为人工确认",
+        fg="#a15c07" if ai_labelled else "#1a7f37",
+        bg="#fff6e5" if ai_labelled else "#e9f7ee",
+        border="#f2d08a" if ai_labelled else "#a7e0b8",
+    ),
+    unsafe_allow_html=True,
+)
+st.info(
+    "**这些标注怎么来的**：凡涉及文献的用例，真值都用 Crossref **实测**确认过"
+    "（该 DOI 是否存在、实际发表年份是多少），并把实测结论写进每条用例的「真值来源」字段；"
+    "构造类用例（证据不足、文内矛盾）的真值来自文本自身。"
+    "标注者字段里所有含「AI 起草」的用例都**还没有经你逐条确认**——"
+    "在确认之前，请不要把这些数字对外说成「人工标注结果」。",
+    icon="ℹ️",
+)
+
+with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源与标注者）", expanded=False):
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "编号": case.case_id,
+                    "类别": case.category,
+                    "文本": case.text,
+                    "标注片段": case.gold_claim_quote,
+                    "标注状态": case.gold_status.value,
+                    "标注问题类型": "、".join(item.value for item in case.gold_problem_types),
+                    "真值来源": case.source_of_truth,
+                    "标注者": case.labeler,
+                }
+                for case in cases
+            ]
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+# ---------------------------------------------------------------- 运行评测
+st.divider()
+st.markdown("#### ▶️ 运行评测")
+
+run_col1, run_col2, run_col3 = st.columns([2, 2, 1])
+with run_col1:
+    baseline_label = st.radio(
+        "选择评测配置",
+        [BASELINE_B2, BASELINE_B1],
+        index=0,
+        help="B2 是完整流程（会调用模型与外部检索）；B1 是离线规则引擎 + 不检索，完全免费，作为下界参照。",
+    )
+with run_col2:
+    chosen_categories = st.multiselect(
+        "限制类别（留空 = 全部）", category_list, default=[]
+    )
+    limit = st.number_input(
+        "最多跑多少条（先小样本试跑可省钱）",
+        min_value=1,
+        max_value=len(cases),
+        value=len(cases),
+        step=1,
+    )
+with run_col3:
+    st.write("")
+    run_clicked = st.button("🚀 运行评测", type="primary", key="run_evaluation")
+
+selected_count = len(
+    [case for case in cases if not chosen_categories or case.category in chosen_categories]
+)
+selected_count = min(selected_count, int(limit))
+if baseline_label == BASELINE_B2 and settings.llm_provider != "mock":
+    st.caption(
+        f"预计调用模型 {selected_count * 2}–{selected_count * 4} 次"
+        "（每条用例：拆解 + 事实审查 + 可能还有证据审查/修正/复核）。"
+        "模型与检索结果都会缓存，**重复评测不再重复付费**。"
+    )
+else:
+    st.caption(f"当前配置不调用真实模型（{selected_count} 条用例，零成本）。")
+
+if run_clicked:
+    active_settings = settings if baseline_label == BASELINE_B2 else offline_settings(settings)
+    progress_bar = st.progress(0.0, text="准备中…")
+    status_box = st.status("正在评测…", expanded=True)
+
+    def on_case(index: int, total: int, case) -> None:  # noqa: ANN001
+        progress_bar.progress(index / max(total, 1), text=f"[{index}/{total}] {case.case_id}")
+        status_box.write(f"{case.case_id}（{case.category}）：{case.text[:40]}…")
+
+    try:
+        report = run_evaluation(
+            settings=active_settings,
+            cases=cases,
+            baseline=baseline_label,
+            limit=int(limit),
+            only_categories=chosen_categories or None,
+            on_case=on_case,
+        )
+    except VeriMindError as exc:
+        status_box.update(label="评测失败", state="error")
+        st.error(f"评测过程中出错：{exc}")
+    else:
+        progress_bar.progress(1.0, text="评测完成")
+        status_box.update(label=f"评测完成（{report.case_count} 条用例）", state="complete")
+        st.session_state["evaluation_report"] = report
+        st.session_state.setdefault("evaluation_history", []).append(report)
+
+report: EvaluationReport | None = st.session_state.get("evaluation_report")
+
+# ---------------------------------------------------------------- 结果
+if report is None:
+    st.info("还没有评测结果。选择配置后点「运行评测」即可——先跑 3–5 条小样本确认流程正常，再跑全量。")
+    st.stop()
+
+st.divider()
+st.markdown(f"#### 📊 评测结果：{report.baseline}")
+st.caption(
+    f"运行时间：{report.created_at.astimezone():%Y-%m-%d %H:%M:%S}　｜　"
+    f"引擎：{report.engine_summary}　｜　用例数：{report.case_count}"
+)
+
+metrics = report.metrics
+
+
+def show(value: object, *, percent: bool = True) -> str:
+    if value is None:
+        return "—"
+    if percent and isinstance(value, float):
+        return f"{value * 100:.1f}%"
+    return str(value)
+
+
+cards = st.columns(5)
+cards[0].metric("检测精确率", show(metrics.get("detection_precision")))
+cards[1].metric("检测召回率", show(metrics.get("detection_recall")))
+cards[2].metric("误报率 FPR", show(metrics.get("false_positive_rate")))
+cards[3].metric("状态完全一致", show(metrics.get("status_accuracy")))
+cards[4].metric("证据可追溯率", show(metrics.get("evidence_traceability_rate")))
+
+cards2 = st.columns(5)
+cards2[0].metric("修正成功率", show(metrics.get("correction_success_rate")))
+cards2[1].metric("剩余错误率", show(metrics.get("residual_error_rate")))
+cards2[2].metric("新增错误率", show(metrics.get("new_error_rate")))
+cards2[3].metric("平均耗时(ms)", show(metrics.get("avg_latency_ms"), percent=False))
+cards2[4].metric("平均模型调用", show(metrics.get("avg_llm_calls_per_case"), percent=False))
+
+st.caption(
+    "各指标定义：**检测精确率/召回率**以「确实有问题」（存在矛盾 / 部分支持 / 来源冲突）为正类；"
+    "**误报率** = 本身没问题却被判成有问题的比例（本项目最看重的诚实指标）；"
+    "**修正成功率** = 标注期望修正的用例里，修正后文本既包含应出现的正确内容、又不残留错误内容的比例；"
+    "**新增错误率** = 修正后出现了原文与证据里都没有的事实（年份/数值/DOI）的用例占比。"
+)
+
+# 混淆矩阵
+st.markdown("##### 混淆矩阵（主张级）")
+confusion = pd.DataFrame(
+    [
+        [metrics.get("true_positive", 0), metrics.get("false_negative", 0)],
+        [metrics.get("false_positive", 0), metrics.get("true_negative", 0)],
     ],
-    why=(
-        "比赛里最容易被追问的是「你这指标怎么来的」。因此这一页从一开始就定下三条规矩：\n\n"
-        "1. **页面上的每个数字都必须能追溯到一次真实运行**，且注明测试集规模与运行条件；\n"
-        "2. **不允许让被测模型给自己的输出打分**，也不把模型自评当作客观真值；\n"
-        "3. **数据不足时明确标注为「初步结果」**，样本量、标注者数量、是否存在单标注者偏差全部写清。"
+    index=["实际：有问题", "实际：没问题"],
+    columns=["预测：有问题", "预测：没问题"],
+)
+st.dataframe(confusion, use_container_width=True)
+st.caption(
+    f"未命中标注片段的用例：{metrics.get('unmatched_count', 0)} 条"
+    "（拆解环节没找到与标注对齐的那条主张——这本身就是一个需要如实报告的结果）。"
+)
+
+# 分类别
+st.markdown("##### 分类别统计")
+by_category = metrics.get("by_category") or {}
+st.dataframe(
+    pd.DataFrame(
+        [
+            {
+                "类别": name,
+                "用例数": item["cases"],
+                "对齐成功": item["matched"],
+                "状态一致": item["correct"],
+                "状态一致率": "—" if not item["matched"] else f"{item['correct'] / item['matched'] * 100:.0f}%",
+            }
+            for name, item in by_category.items()
+        ]
     ),
-    dependency=(
-        "- 依赖阶段 2–5 的可运行全流程\n"
-        "- 依赖人工确认过的标注测试集（`examples/golden_set.csv`）\n"
-        "- 若只有一位标注者，页面会声明存在主观偏差，不计算标注一致性指标"
+    use_container_width=True,
+    hide_index=True,
+)
+
+# 逐条结果
+st.markdown("##### 逐条结果")
+category_filter = st.multiselect(
+    "按类别筛选", sorted({row.category for row in report.rows}), default=[], key="row_filter"
+)
+rows = [row for row in report.rows if not category_filter or row.category in category_filter]
+st.dataframe(
+    pd.DataFrame(
+        [
+            {
+                "编号": row.case_id,
+                "类别": row.category,
+                "标注": row.gold_status,
+                "预测": row.predicted_status or "未命中",
+                "一致": "✅" if row.gold_status == row.predicted_status else "❌",
+                "对齐到的主张": row.matched_claim_quote or "—",
+                "预测问题类型": "、".join(row.predicted_problem_types) or "—",
+                "证据数": len(row.evidence_ids),
+                "修正/采用": f"{row.corrections}/{row.corrections_applied}",
+                "新增事实": "、".join(row.new_fact_tokens) or "—",
+                "耗时(ms)": row.latency_ms,
+                "模型调用": row.llm_calls,
+            }
+            for row in rows
+        ]
     ),
+    use_container_width=True,
+    hide_index=True,
+)
+
+if report.failures:
+    st.markdown(f"##### ❌ 失败案例（{len(report.failures)} 条，如实列出）")
+    for item in report.failures:
+        st.markdown(f"- **{item['case_id']}**（{item['kind']}）：{item['detail']}")
+else:
+    st.success("本次评测没有失败案例（样本量小，这并不代表系统在所有情况下都可靠）。")
+
+st.markdown("##### ⚠️ 实验说明与局限")
+for caveat in report.caveats:
+    st.markdown(f"- {caveat}")
+
+st.divider()
+st.markdown("##### 🧪 基线说明")
+st.markdown(
+    f"- **{BASELINE_B2}**：本项目的完整流程（拆解 → 检索 → 裁决 → 修正 → 复核）。\n"
+    f"- **{BASELINE_B1}**：离线规则引擎 + 不检索，**完全免费**，用来给出一个下界参照"
+    "（如果完整流程连它都赢不了，那就说明外部证据与模型没有带来价值）。\n"
+    "- **B0（让原模型自己检查自己）尚未实现**：我们没有把没真正跑过的对照数字放进这张表——"
+    "宁可缺一行，也不编一行。"
+)
+st.caption(
+    "状态取值顺序：" + " → ".join(item.value for item in STATUS_DISPLAY_ORDER)
 )
