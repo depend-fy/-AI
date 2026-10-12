@@ -126,7 +126,7 @@ st.markdown(
 # ---------------------------------------------------------------- 导航
 st.divider()
 st.markdown("#### 🚀 开始使用")
-nav1, nav2, nav3 = st.columns(3)
+nav1, nav2, nav3, nav4 = st.columns(4)
 with nav1:
     safe_page_link("pages/1_检测工作台.py", label="检测工作台", icon="🧪")
     st.caption("粘贴待核验文本，启动检测")
@@ -136,6 +136,9 @@ with nav2:
 with nav3:
     safe_page_link("pages/3_评测.py", label="评测", icon="📈")
     st.caption("在人工标注集上的真实指标（阶段 6）")
+with nav4:
+    safe_page_link("pages/4_展示与答辩.py", label="展示与答辩", icon="🎬")
+    st.caption("演示脚本 / 架构与创新点 / 实验报告与答辩（阶段 7）")
 
 # ---------------------------------------------------------------- 真实环境状态
 st.divider()

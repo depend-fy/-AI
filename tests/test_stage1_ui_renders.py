@@ -22,6 +22,7 @@ PAGE_SCRIPTS = [
     "pages/1_检测工作台.py",
     "pages/2_检测报告.py",
     "pages/3_评测.py",
+    "pages/4_展示与答辩.py",
 ]
 
 
@@ -84,6 +85,25 @@ def test_evaluation_page_shows_the_labeled_dataset() -> None:
     assert "检测精确率" not in labels, "没点运行之前不应出现任何指标数字"
 
     assert any(button.key == "run_evaluation" for button in app.button)
+
+
+def test_presentation_page_renders_the_stage7_materials() -> None:
+    """「展示与答辩」页必须真的把三份材料渲染出来（单一数据源，改文档即改网页）。
+
+    这样一旦 docs/ 里的文件被改名或删除，测试会立刻失败，而不是页面上悄悄显示一个报错框。
+    """
+    app = AppTest.from_file(str(PROJECT_ROOT / "pages/4_展示与答辩.py"), default_timeout=180)
+    app.run()
+    assert not app.exception
+
+    markdown_all = "\n".join(element.value for element in app.markdown)
+    assert "五个核心创新点" in markdown_all, "架构与创新点材料没有被渲染"
+    assert "四幕脚本" in markdown_all, "演示脚本材料没有被渲染"
+    assert "答辩 Q&A" in markdown_all, "实验与答辩材料没有被渲染"
+
+    labels = [element.label for element in app.metric]
+    assert "运行模式" in labels, "必须展示实时运行模式"
+    assert "用例总数" in labels, "必须展示标注集的实时确认进度"
 
 
 def test_implemented_pages_do_not_claim_to_be_placeholders() -> None:
