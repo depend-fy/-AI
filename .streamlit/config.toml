@@ -1,0 +1,21 @@
+# Streamlit 外观配置（主题色与首页行为）
+# 目的：让 Demo 的观感统一、专业；观感属于"展示层"，不影响任何业务逻辑。
+
+[theme]
+base = "light"
+primaryColor = "#1f5fa9"          # 主色：沉稳的蓝，符合"校验/审计"的气质
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f7fa"
+textColor = "#1c1f23"
+font = "sans serif"
+
+[server]
+headless = false                   # 本地运行时自动打开浏览器
+runOnSave = true                   # 改代码后页面自动刷新（开发期很省事）
+
+[browser]
+gatherUsageStats = false           # 不上报使用统计，符合数据隐私要求
+
+[client]
+showErrorDetails = true            # 开发期保留完整报错，便于定位问题
+toolbarMode = "minimal"

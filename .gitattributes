@@ -1,0 +1,16 @@
+# 统一换行符处理，避免 Windows 上每次提交都出现
+# "LF will be replaced by CRLF" 的警告噪音。
+# 仓库内统一存 LF；Windows 检出时按需转换。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.db binary
+*.xlsx binary
+*.docx binary
+*.pptx binary

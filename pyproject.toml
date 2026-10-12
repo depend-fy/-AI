@@ -1,0 +1,23 @@
+# 本文件目前只承担两件事：
+#   1. 声明项目元信息（名字、版本、Python 版本要求）
+#   2. 配置 pytest
+# 依赖统一写在 requirements.txt 里，避免"两个地方都要改依赖"的坑。
+
+[project]
+name = "verimind-ai"
+version = "0.1.0"
+description = "智鉴 AI（VeriMind AI）——多模型协同的 AI 幻觉检测、证据溯源、错误归因与自动修正系统（Demo）"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+# 让 pytest 能找到项目根目录下的 verimind 包（不需要额外安装本项目）
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+# 标记为 live 的测试会真实访问网络/调用模型，默认不跑（避免烧钱、避免断网误报）
+markers = [
+    "live: 需要真实网络与 API 密钥的测试（默认通过 -m 'not live' 跳过）",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

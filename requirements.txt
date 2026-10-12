@@ -1,0 +1,20 @@
+# 智鉴 AI（VeriMind AI）依赖清单
+# 安装： .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+# 说明：这里只放"跑起来必须有"的包，且都固定了大版本上限，避免某天自动升级把环境搞坏。
+
+# --- 界面 ---
+streamlit>=1.40,<2          # Web 界面（多页应用）
+pandas>=2.2,<4              # Streamlit 表格与评测页数据展示
+
+# --- 数据结构与配置 ---
+pydantic>=2.9,<3            # 所有跨模块数据模型 + 校验（项目地基）
+pydantic-settings>=2.4,<3   # 从 .env / 环境变量读配置
+python-dotenv>=1.0,<2       # .env 文件解析（pydantic-settings 的底层依赖，显式列出便于理解）
+
+# --- 外部调用 ---
+httpx>=0.27,<1              # 文献检索 API（Crossref / OpenAlex / arXiv）
+openai>=1.40,<2             # 大模型调用（OpenAI 兼容协议，可指向 DeepSeek 等）
+
+# --- 测试（阶段 6 会大量使用，阶段 1 先用冒烟测试验证环境） ---
+pytest>=8.0,<9              # 测试框架
+respx>=0.21,<1              # mock httpx 请求，让测试离线可跑、不烧钱
