@@ -11,7 +11,10 @@ font = "sans serif"
 
 [server]
 headless = false                   # 本地运行时自动打开浏览器
-runOnSave = true                   # 改代码后页面自动刷新（开发期很省事）
+# 改代码后**不**自动重载。原因：自动重载在文件处于"改了一半"的状态时会拉到语法错误，
+# 严重时会让整个服务进程退出（开发期实测遇到过）。手动重载更可控：
+# 浏览器里按 R，或点右上角 Rerun。
+runOnSave = false
 
 [browser]
 gatherUsageStats = false           # 不上报使用统计，符合数据隐私要求
