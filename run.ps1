@@ -1,4 +1,4 @@
-# 智鉴 AI（VeriMind AI）一键启动脚本
+﻿# 智鉴 AI（VeriMind AI）一键启动脚本
 #
 # 用法（在项目根目录）：
 #     powershell -ExecutionPolicy Bypass -File .\run.ps1
