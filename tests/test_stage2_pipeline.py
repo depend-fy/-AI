@@ -231,13 +231,23 @@ def test_build_client_returns_offline_engine_for_mock(tmp_path: Path) -> None:
     assert "mock" in client.engine_id
 
 
-def test_build_client_refuses_unimplemented_real_provider(tmp_path: Path) -> None:
-    """配置了真实 provider 时要明确报错，绝不能偷偷用规则引擎顶替。"""
-    settings = make_settings(tmp_path, llm_provider="deepseek", llm_api_key="sk-" + "x" * 20)
+def test_build_client_requires_key_for_real_provider(tmp_path: Path) -> None:
+    """选了需要密钥的 provider 却没填密钥时，必须明确报错，绝不偷偷降级。"""
+    settings = make_settings(tmp_path, llm_provider="deepseek", llm_api_key="")
     with pytest.raises(LLMError) as excinfo:
         build_client(settings)
-    assert "阶段 2" in str(excinfo.value)
-    assert "VERIMIND_LLM_PROVIDER=mock" in str(excinfo.value)
+    assert "VERIMIND_LLM_API_KEY" in str(excinfo.value)
+    assert "mock" in str(excinfo.value)
+
+
+def test_build_client_returns_real_client_when_key_present(tmp_path: Path) -> None:
+    """阶段 3 起，填了密钥就应该拿到真实模型客户端（而不是报错或规则引擎）。"""
+    settings = make_settings(
+        tmp_path, llm_provider="deepseek", llm_api_key="sk-" + "x" * 20
+    )
+    client = build_client(settings)
+    assert client.is_simulated is False
+    assert client.engine_id == "deepseek/deepseek-chat"
 
 
 def test_offline_client_rejects_roles_it_cannot_perform(tmp_path: Path) -> None:

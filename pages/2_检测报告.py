@@ -136,6 +136,12 @@ if unverified:
 else:
     st.caption("没有待核验的主张。")
 
+# ---------------------------------------------------------------- 交叉比对
+st.divider()
+from verimind.ui.components import render_cross_check  # noqa: E402
+
+render_cross_check(report)
+
 # ---------------------------------------------------------------- 状态图例
 st.divider()
 st.markdown("#### 🎨 状态含义对照")

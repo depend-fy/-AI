@@ -1,38 +1,48 @@
 """大模型适配层的抽象接口。
 
-这个文件是**阶段 3 的预留接口**，但从阶段 2 就开始使用：
-    阶段 2 的实现是"离线规则引擎"（mock_provider），阶段 3 会新增
-    "OpenAI 兼容协议的客户端"（openai_compat），两者实现同一个接口。
-    因此流水线、报告、界面**一行都不用改**就能从"规则"切到"真模型"。
-
-接口设计原则
-------------
+设计原则
+--------
 1. **只输出结构化数据**：调用方传 Pydantic 模型，拿回该模型的实例。
-   校验失败由客户端负责（修复重试 1 次后仍失败则抛 SchemaValidationError），
+   校验失败由客户端负责（修复重试后仍失败则抛 SchemaValidationError），
    绝不把"看起来差不多"的半成品交给下游。
-2. **如实标注来源**：每次调用都返回 `LlmUsage`，其中明确写着
-   provider / model / 是否模拟 / token 数 / 耗时 / 状态。
-   报告与界面据此标注"本次结果来自离线规则引擎"还是"来自真实模型"。
-3. **离线实现必须自曝身份**：`is_simulated` 默认返回 True ——
+2. **如实标注来源**：每次调用都返回 `LlmUsage`，明确写着 provider / model /
+   是否模拟 / token 数 / 耗时 / 状态。报告与界面据此标注结果来自哪里。
+3. **离线实现必须自曝身份**：`is_simulated` 默认 True ——
    宁可多标一句"这是模拟的"，也不能让人误以为真的调用了大模型。
+4. **预算可控**：`CallBudget` 限制单次检测的调用次数，防止成本失控。
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Mapping, TypeVar
+from typing import Any, Callable, Mapping, TypeVar
 
 from pydantic import BaseModel
 
 from verimind.claims.extractor import ExtractionResult, drafts_to_claims
 from verimind.core.config import Settings
 from verimind.core.enums import LlmCallStatus, RoleName
-from verimind.core.errors import LLMError
-from verimind.core.schemas import ClaimExtraction, Span
-from verimind.models.prompts import EXTRACTION_SYSTEM_PROMPT, build_extraction_prompt
+from verimind.core.errors import LLMBudgetExceeded, LLMError
+from verimind.core.schemas import (
+    Claim,
+    ClaimExtraction,
+    FactCheckReport,
+    LlmCallLog,
+    Span,
+)
+from verimind.models.prompts import (
+    EXTRACTION_SYSTEM_PROMPT,
+    FACT_CHECKER_SYSTEM_PROMPT,
+    build_extraction_prompt,
+    build_fact_check_prompt,
+)
 
 TModel = TypeVar("TModel", bound=BaseModel)
+
+#: 不需要密钥就能用的 provider
+_KEYLESS_PROVIDERS = frozenset({"mock", "ollama"})
 
 
 @dataclass(frozen=True)
@@ -57,6 +67,33 @@ class LlmUsage:
     @property
     def engine_id(self) -> str:
         return f"{self.provider}/{self.model}"
+
+
+class CallBudget:
+    """单次检测的模型调用预算（防止一次检测烧掉太多钱）。"""
+
+    def __init__(self, limit: int) -> None:
+        self.limit = max(1, int(limit))
+        self.used = 0
+        self._roles: Counter[str] = Counter()
+
+    def consume(self, role: RoleName | None = None) -> None:
+        if self.used >= self.limit:
+            raise LLMBudgetExceeded(
+                f"本次检测的模型调用次数已达上限（{self.limit} 次），为避免成本失控已停止调用。"
+                "可在 .env 中调整 VERIMIND_LLM_MAX_CALLS_PER_RUN。"
+            )
+        self.used += 1
+        if role is not None:
+            self._roles[str(role.value)] += 1
+
+    @property
+    def remaining(self) -> int:
+        return max(0, self.limit - self.used)
+
+    def summary(self) -> str:
+        detail = "、".join(f"{role}×{count}" for role, count in self._roles.items())
+        return f"共 {self.used}/{self.limit} 次" + (f"（{detail}）" if detail else "")
 
 
 class LLMClient(ABC):
@@ -100,7 +137,7 @@ class LLMClient(ABC):
 
         规则引擎自己就精确知道每个片段的位置，直接给出提示可以避免
         `find_span()` 在原文里有重复片段时定位到错的那一处。
-        真实模型实现返回 None，由代码按引用文本自动定位。
+        真实模型实现返回 None，由代码按引用文本自动定位（模型只负责给引用原文）。
         """
         return None
 
@@ -125,6 +162,24 @@ class LLMClient(ABC):
         )
         return result, usage
 
+    def assess_claims(
+        self, text: str, claims: list[Claim]
+    ) -> tuple[FactCheckReport, LlmUsage]:
+        """事实审查员（角色 A）：逐条审查已经拆解出来的主张。
+
+        注意：审查员的结论**不直接决定**主张的对错，
+        它只提供"怀疑方向与还要问什么"，最终状态仍由规则裁决层给出。
+        离线规则引擎不支持这个角色，会抛 LLMUnsupportedRoleError（不会编结果）。
+        """
+        prompt = build_fact_check_prompt(text, claims)
+        return self.complete_structured(
+            role=RoleName.FACT_CHECKER,
+            prompt=prompt,
+            schema=FactCheckReport,
+            system=FACT_CHECKER_SYSTEM_PROMPT,
+            context={"text": text, "claims": [claim.model_dump(mode="json") for claim in claims]},
+        )
+
     def health(self) -> tuple[bool, str]:
         """可用性自检（界面上可以显示"当前引擎是否可用"）。"""
         return True, "ok"
@@ -133,11 +188,19 @@ class LLMClient(ABC):
 # ==========================================================================
 # 工厂
 # ==========================================================================
-def build_client(settings: Settings) -> LLMClient:
+def build_client(
+    settings: Settings,
+    *,
+    cache: Any = None,
+    budget: CallBudget | None = None,
+    recorder: Callable[[LlmCallLog], None] | None = None,
+    run_id: str | None = None,
+) -> LLMClient:
     """根据配置构造客户端。
 
-    阶段 2 只有离线规则引擎；配置了真实 provider 时**明确报错**，
-    而不是偷偷降级成规则引擎假装在工作。
+    - `provider=mock` → 离线规则引擎（不联网、零成本）；
+    - 其他 provider 且填了密钥 → OpenAI 兼容客户端（真实调用）；
+    - 选了需要密钥的 provider 却没填密钥 → **明确报错**，不偷偷降级。
     """
     provider = (settings.llm_provider or "").strip().lower()
     if provider in ("", "mock"):
@@ -145,8 +208,28 @@ def build_client(settings: Settings) -> LLMClient:
 
         return RuleBasedOfflineClient()
 
-    raise LLMError(
-        f"当前版本（阶段 2）尚未接入真实模型调用：VERIMIND_LLM_PROVIDER={provider!r}。\n"
-        "请在 .env 中设置 VERIMIND_LLM_PROVIDER=mock 以使用离线规则引擎；\n"
-        "真实大模型适配器将在阶段 3 实现（接口已经预留，届时只需换实现）。"
+    if provider not in _KEYLESS_PROVIDERS and settings.missing_credentials:
+        raise LLMError(
+            f"已选择 provider={provider}，但没有配置 VERIMIND_LLM_API_KEY。\n"
+            "请在 .env 中填写密钥；或把 VERIMIND_LLM_PROVIDER 改回 mock 使用离线规则引擎。"
+        )
+
+    if not (settings.llm_base_url or "").strip():
+        raise LLMError(
+            f"provider={provider} 需要设置 VERIMIND_LLM_BASE_URL（OpenAI 兼容接口地址）。"
+        )
+
+    from verimind.models.openai_compat import OpenAICompatibleClient
+
+    return OpenAICompatibleClient(
+        provider=provider,
+        model=settings.llm_model,
+        base_url=settings.llm_base_url,
+        api_key=settings.llm_api_key,
+        timeout_seconds=float(settings.llm_timeout_seconds),
+        max_retries=settings.llm_max_retries,
+        cache=cache,
+        budget=budget or CallBudget(limit=settings.llm_max_calls_per_run),
+        recorder=recorder,
+        run_id=run_id,
     )

@@ -88,6 +88,21 @@ def print_report(report: DetectionReport) -> None:
                           f"／{evidence.level.value}：{evidence.snippet}")
         if result.missing_evidence:
             print("  还缺什么：" + " ".join(result.missing_evidence))
+        if result.role_positions:
+            print("  角色结论：")
+            for position in result.role_positions:
+                print(
+                    f"    - {position.role.value}（{position.provider}/{position.model}）："
+                    f"{position.stance.value}｜{position.conclusion}"
+                )
+                if position.reasoning:
+                    print(f"      依据：{position.reasoning}")
+
+    if report.cross_check_notes:
+        print("\n" + line)
+        print("引擎交叉比对（规则引擎 vs 大模型）：")
+        for note in report.cross_check_notes:
+            print(f"  · {note}")
 
     if report.limitations:
         print("\n" + line)
@@ -98,7 +113,8 @@ def print_report(report: DetectionReport) -> None:
     print("\n" + line)
     print(
         f"耗时：{report.metrics.latency_ms} ms    "
-        f"大模型调用：{report.metrics.llm_calls} 次（离线规则引擎不计为大模型调用）"
+        f"大模型调用：{report.metrics.llm_calls} 次计费"
+        f" / {report.metrics.cache_hits} 次命中缓存"
     )
     print(f"成本说明：{report.metrics.cost_note}")
     print(line)

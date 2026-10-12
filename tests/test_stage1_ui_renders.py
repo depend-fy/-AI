@@ -40,10 +40,12 @@ def test_home_page_shows_real_project_info() -> None:
     titles = [element.value for element in app.title]
     assert any("智鉴 AI" in title for title in titles)
 
-    # 首页必须如实声明当前运行模式（默认无密钥 → 离线模拟）
+    # 首页必须如实声明当前运行模式（具体是哪种取决于 .env 配置，因此只断言"明确标注了"）
     markdown_text = "\n".join(element.value for element in app.markdown)
     assert "当前运行模式" in markdown_text
-    assert "离线模拟" in markdown_text
+    assert any(
+        mode in markdown_text for mode in ("离线模拟", "单模型多角色模拟", "多模型协同")
+    ), "运行模式必须是三种明确模式之一，不能含糊"
 
     # 首页必须如实声明当前能力边界（阶段 2：未接入外部检索与修正复核）
     info_text = "\n".join(element.value for element in app.info)

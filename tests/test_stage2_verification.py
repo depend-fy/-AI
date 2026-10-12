@@ -13,12 +13,13 @@ import pytest
 from verimind.claims.extractor import RuleBasedExtractor
 from verimind.claims.preprocess import analyze_text
 from verimind.core.enums import (
+    ClaimType,
     ProblemType,
     SearchStatus,
     Severity,
     VerificationStatus,
 )
-from verimind.core.schemas import Claim, Evidence, VerificationResult
+from verimind.core.schemas import Claim, Evidence, Span, VerificationResult
 from verimind.verification.consistency import (
     conflicts_by_claim,
     find_internal_conflicts,
@@ -221,6 +222,114 @@ def test_stage2_search_trace_is_honestly_marked_as_skipped() -> None:
             assert record.status is SearchStatus.SKIPPED
             assert record.source is None, "没查过就不能写检索来源"
             assert "未接入外部文献检索" in record.detail
+
+
+# ==========================================================================
+# 回归：真实大模型给出的片段更宽时，规则不能失灵或误报
+# ==========================================================================
+def evaluate_manual(text: str, claims: list[Claim]) -> list[VerificationResult]:
+    """用手工构造的主张（模拟大模型给出的宽片段）走一遍裁决。"""
+    analysis = analyze_text(text)
+    conflicts = find_internal_conflicts(text, claims, analysis=analysis)
+    evidence, ids_by_claim = internal_evidence_for_conflicts(conflicts)
+    context = AdjudicationContext(
+        text=text,
+        analysis=analysis,
+        conflicts_by_claim=conflicts_by_claim(conflicts),
+        evidence_ids_by_claim=ids_by_claim,
+    )
+    return [evaluate_claim(claim, context) for claim in claims]
+
+
+def make_manual_claim(
+    text: str, start: int, end: int, claim_type, *, claim_id: str = "C001", questions=None
+) -> Claim:
+    return Claim(
+        claim_id=claim_id,
+        source_span=Span.from_text(text, start, end),
+        normalized_claim="（测试用主张）",
+        claim_type=claim_type,
+        verification_questions=questions or ["该论断是否可核验？"],
+    )
+
+
+def test_n5_still_fires_when_model_quotes_the_prefix() -> None:
+    """回归用例：大模型常把 `DOI: 10.xxxx/...` 整段作为引用，
+    此时若只检查"片段文字本身像不像 DOI"，格式不合规的 DOI 就会被漏掉。"""
+    text = "相关研究（DOI: 10.xxxx/example.001）表明结论成立。"
+    start = text.index("DOI: ")
+    end = text.index("）")
+    claim = make_manual_claim(text, start, end, ClaimType.DOI_VALIDITY)
+    result = evaluate_manual(text, [claim])[0]
+    assert "N5" in result.adjudication_rule, "带上 DOI: 前缀后仍然必须识别出格式不合规"
+    assert ProblemType.CITATION_MISSING in result.problem_types
+
+
+def test_n5_does_not_fire_for_a_valid_doi_with_prefix() -> None:
+    text = "相关研究（DOI: 10.1038/nature12373）表明结论成立。"
+    start = text.index("DOI: ")
+    end = text.index("）")
+    claim = make_manual_claim(text, start, end, ClaimType.DOI_VALIDITY)
+    result = evaluate_manual(text, [claim])[0]
+    assert "N5" not in result.adjudication_rule
+    assert result.problem_types == []
+
+
+def test_n2_is_skipped_when_the_span_contains_no_number() -> None:
+    """回归用例：模型把「取得最优结果」标成数值类时，不能凭空说"给出了具体数值"。"""
+    text = "该研究在多个公开数据集上取得了最优结果。"
+    claim = make_manual_claim(text, 0, len(text), ClaimType.QUANTITATIVE)
+    result = evaluate_manual(text, [claim])[0]
+    assert ProblemType.MISSING_EVIDENCE not in result.problem_types
+    assert result.adjudication_rule == "N1"
+
+
+def test_n3_wording_matches_the_actual_text() -> None:
+    """回归用例：原文里没有"证明/证实"时，理由里不能硬说它用了这些词。"""
+    text = "该新方法可将图像分类准确率提高 40%，并取得最优结果。"
+    claim = make_manual_claim(text, 0, len(text), ClaimType.CAUSAL)
+    result = evaluate_manual(text, [claim])[0]
+    assert ProblemType.OVERREACH in result.problem_types
+    assert "证明" not in result.rationale
+    assert "证实" not in result.rationale
+    assert "因果" in result.rationale
+
+
+def test_n2_mentions_the_invalid_doi_when_present() -> None:
+    """句中只有格式不合规的 DOI 时，理由要说清楚"它不构成可核验来源"。"""
+    text = "该研究（DOI: 10.xxxx/example.001）显示准确率提高了 40%。"
+    claim = make_manual_claim(text, 0, len(text), ClaimType.QUANTITATIVE)
+    result = evaluate_manual(text, [claim])[0]
+    assert "N2" in result.adjudication_rule
+    assert "格式不合规" in result.rationale
+
+
+def test_conflict_is_not_attributed_to_unrelated_claim_types() -> None:
+    """回归用例：大模型给的引用片段很宽时，"期刊类/归属类"主张不能被安上年份冲突。
+
+    冲突只应挂到确实在谈这件事的主张上（年份冲突→年份类；数值冲突→数值类）。
+    """
+    # 同一 DOI 两个年份（会触发 I1）+ 同一指标两个数值（会触发 I2），
+    # 另外手工加一条"期刊类"主张，它的片段覆盖了其中那个年份。
+    text = (
+        "该研究于 2023 年发表在《自然》杂志（DOI: 10.1038/nature12373），模型准确率提高了 40%。"
+        "同一篇 2019 年的论文（DOI: 10.1038/nature12373）指出，准确率提升了 12%。"
+    )
+    claims, _, context = build(text)
+    year_claim = next(c for c in claims if c.claim_type is ClaimType.METADATA_YEAR)
+    journal_start = text.index("《自然》")
+    journal_claim = make_manual_claim(
+        text,
+        journal_start,
+        journal_start + len("《自然》"),
+        ClaimType.METADATA_VENUE,
+        claim_id="C900",
+    )
+    analysis = analyze_text(text)
+    conflicts = find_internal_conflicts(text, [*claims, journal_claim], analysis=analysis)
+    touched = {claim_id for conflict in conflicts for claim_id in conflict.claim_ids}
+    assert year_claim.claim_id in touched, "年份类主张应当被标为冲突"
+    assert "C900" not in touched, "期刊类主张不该被安上年份冲突"
 
 
 # ==========================================================================

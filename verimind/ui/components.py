@@ -269,7 +269,7 @@ def render_claim_card(
                 )
         else:
             st.caption(
-                "各角色结论：无。阶段 2 由规则引擎单独裁决，没有大模型角色参与——"
+                "各角色结论：无。当前为离线规则引擎模式，没有大模型角色参与——"
                 "所以这里既没有「分歧」也没有「协同」，不会假装有。"
             )
 
@@ -299,6 +299,31 @@ def render_report_header(report: DetectionReport) -> None:
         unsafe_allow_html=True,
     )
 
+    extractor = report.llm_config_summary.get("claim_extractor", {})
+    if extractor:
+        engine = f"{extractor.get('provider', '')}/{extractor.get('model', '')}"
+        st.caption(
+            f"主张拆解引擎：**{engine}** ｜ 是否模拟：{extractor.get('simulated', '未知')}"
+        )
+
+
+def render_cross_check(report: DetectionReport) -> None:
+    """引擎交叉比对：把"规则引擎和模型谁发现了什么、谁漏了什么"摆到台面上。
+
+    这一节存在的意义是**暴露分歧**，而不是掩盖分歧。
+    一个小系统如果连自己的两个部件意见不一致都不敢说，那它给出的"结论"也没什么可信度。
+    """
+    st.markdown("#### 🔍 引擎交叉比对（规则引擎 vs 大模型）")
+    if not report.cross_check_notes:
+        st.caption("本次没有可展示的交叉比对信息。")
+        return
+    st.caption(
+        "规则引擎与真实模型分别独立拆解同一段文本，下面是两者的差异与分歧全记录"
+        "（不做取舍、不做美化）。"
+    )
+    for note in report.cross_check_notes:
+        st.markdown(f"- {note}")
+
 
 def render_run_info(report: DetectionReport) -> None:
     """运行信息：谁在干活、花了多少时间、是否产生费用。"""
@@ -313,9 +338,11 @@ def render_run_info(report: DetectionReport) -> None:
         )
         st.markdown(
             f"- 端到端耗时：{report.metrics.latency_ms} ms\n"
-            f"- 大模型调用次数：{report.metrics.llm_calls}\n"
+            f"- 大模型调用次数：{report.metrics.llm_calls}（计费）"
+            f" ／ {report.metrics.cache_hits}（命中缓存，未计费）\n"
             f"- token 用量：prompt {report.metrics.prompt_tokens} / completion {report.metrics.completion_tokens}\n"
-            f"- 成本：{'未计算：' + report.metrics.cost_note if report.metrics.estimated_cost is None else report.metrics.estimated_cost}"
+            f"- 成本：{report.metrics.estimated_cost if report.metrics.estimated_cost is not None else '—'}\n"
+            f"- 成本说明：{report.metrics.cost_note}"
         )
         st.caption(f"输入文本 SHA-256：{report.input_sha256}")
 

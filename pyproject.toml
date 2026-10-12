@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 # 让 pytest 能找到项目根目录下的 verimind 包（不需要额外安装本项目）
 pythonpath = ["."]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m \"not live\""
 # 标记为 live 的测试会真实访问网络/调用模型，默认不跑（避免烧钱、避免断网误报）
 markers = [
     "live: 需要真实网络与 API 密钥的测试（默认通过 -m 'not live' 跳过）",

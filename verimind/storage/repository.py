@@ -19,8 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+from verimind.core.enums import LlmCallStatus, RoleName
 from verimind.core.errors import StorageError
-from verimind.core.schemas import DetectionReport
+from verimind.core.schemas import DetectionReport, LlmCallLog
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -37,6 +38,25 @@ CREATE TABLE IF NOT EXISTS runs (
     report_json       TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_runs_created_at ON runs (created_at DESC);
+
+-- 大模型调用日志：用于成本核算与问题排查。
+-- 刻意**不存完整提示词**（提示词里有用户原文），只存哈希。
+CREATE TABLE IF NOT EXISTS llm_calls (
+    call_id           TEXT PRIMARY KEY,
+    run_id            TEXT,
+    role              TEXT,
+    provider          TEXT,
+    model             TEXT,
+    prompt_hash       TEXT,
+    prompt_tokens     INTEGER,
+    completion_tokens INTEGER,
+    latency_ms        INTEGER NOT NULL DEFAULT 0,
+    status            TEXT,
+    error             TEXT,
+    created_at        TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_llm_calls_run ON llm_calls (run_id);
+CREATE INDEX IF NOT EXISTS idx_llm_calls_created ON llm_calls (created_at DESC);
 """
 
 #: 建表之后新增的列：老数据库文件需要补列（简单迁移，避免"升级后打不开旧数据"）
@@ -179,3 +199,78 @@ class RunRepository:
         with self._connect() as connection:
             row = connection.execute("SELECT COUNT(*) AS n FROM runs").fetchone()
         return int(row["n"]) if row else 0
+
+    # ------------------------------------------------------------------
+    # 大模型调用日志（成本核算与排查用）
+    # ------------------------------------------------------------------
+    def save_llm_call(self, call: LlmCallLog) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO llm_calls (
+                    call_id, run_id, role, provider, model, prompt_hash,
+                    prompt_tokens, completion_tokens, latency_ms, status, error, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    call.call_id,
+                    call.run_id,
+                    str(call.role.value) if call.role else None,
+                    call.provider,
+                    call.model,
+                    call.prompt_hash,
+                    call.prompt_tokens,
+                    call.completion_tokens,
+                    call.latency_ms,
+                    str(call.status.value),
+                    call.error,
+                    call.created_at.astimezone(timezone.utc).isoformat(),
+                ),
+            )
+
+    def list_llm_calls(self, run_id: str | None = None, limit: int = 50) -> list[LlmCallLog]:
+        query = "SELECT * FROM llm_calls"
+        params: list[object] = []
+        if run_id:
+            query += " WHERE run_id = ?"
+            params.append(run_id)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(max(1, limit))
+        with self._connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+        calls: list[LlmCallLog] = []
+        for row in rows:
+            calls.append(
+                LlmCallLog(
+                    call_id=row["call_id"],
+                    run_id=row["run_id"],
+                    role=RoleName(row["role"]) if row["role"] else None,
+                    provider=row["provider"] or "",
+                    model=row["model"] or "",
+                    prompt_hash=row["prompt_hash"] or "",
+                    prompt_tokens=row["prompt_tokens"],
+                    completion_tokens=row["completion_tokens"],
+                    latency_ms=int(row["latency_ms"] or 0),
+                    status=LlmCallStatus(row["status"]) if row["status"] else LlmCallStatus.OK,
+                    error=row["error"],
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                )
+            )
+        return calls
+
+    def usage_summary(self, run_id: str | None = None) -> dict[str, int]:
+        """汇总 token 用量（用于评测页的"单次检测成本"指标）。"""
+        query = "SELECT COALESCE(SUM(prompt_tokens),0) AS p, COALESCE(SUM(completion_tokens),0) AS c, COUNT(*) AS n FROM llm_calls"
+        params: list[object] = []
+        if run_id:
+            query += " WHERE run_id = ?"
+            params.append(run_id)
+        with self._connect() as connection:
+            row = connection.execute(query, params).fetchone()
+        if row is None:
+            return {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+        return {
+            "calls": int(row["n"] or 0),
+            "prompt_tokens": int(row["p"] or 0),
+            "completion_tokens": int(row["c"] or 0),
+        }

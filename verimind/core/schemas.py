@@ -254,6 +254,36 @@ class ClaimExtraction(VeriMindModel):
 
 
 # ==========================================================================
+# 一之三、角色输出（事实审查员等）
+# ==========================================================================
+class ClaimAssessment(VeriMindModel):
+    """事实审查员（角色 A）对**单条**主张的评估。
+
+    注意：这只是"审查员怎么看"，**不是最终结论**。
+    最终状态仍由规则裁决层（verification/rules.py）依据证据与规则决定。
+    审查员的怀疑会进报告、会参与交叉比对，但不会单独把一条主张判成"有错"。
+    """
+
+    claim_id: str
+    stance: RoleStance = RoleStance.UNCERTAIN
+    conclusion: str = Field(min_length=1, description="一句话结论")
+    reasoning: str = Field(default="", description="推理依据")
+    suspected_problem_types: list[ProblemType] = Field(
+        default_factory=list, description="审查员怀疑的问题类型（尚未证实）"
+    )
+    additional_questions: list[str] = Field(
+        default_factory=list, description="审查员建议补充的核验问题"
+    )
+
+
+class FactCheckReport(VeriMindModel):
+    """事实审查员对一批主张的整体输出。"""
+
+    assessments: list[ClaimAssessment] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list, description="审查员的补充说明")
+
+
+# ==========================================================================
 # 二、外部证据
 # ==========================================================================
 class Evidence(VeriMindModel):
@@ -532,7 +562,8 @@ class RunMetrics(VeriMindModel):
     """运行指标。成本没有真实单价来源时保持 None，不猜数字。"""
 
     latency_ms: int | None = Field(default=None, ge=0)
-    llm_calls: int = Field(default=0, ge=0)
+    llm_calls: int = Field(default=0, ge=0, description="真正产生费用的模型调用次数")
+    cache_hits: int = Field(default=0, ge=0, description="命中本地缓存、未产生费用的调用次数")
     prompt_tokens: int = Field(default=0, ge=0)
     completion_tokens: int = Field(default=0, ge=0)
     estimated_cost: float | None = Field(
@@ -569,6 +600,10 @@ class DetectionReport(VeriMindModel):
     stats: ReportStats = Field(default_factory=ReportStats)
     metrics: RunMetrics = Field(default_factory=RunMetrics)
     unresolved_claim_ids: list[str] = Field(default_factory=list)
+    cross_check_notes: list[str] = Field(
+        default_factory=list,
+        description="不同引擎（规则引擎 / 大模型）结果的交叉比对说明，用于暴露分歧而不是掩盖分歧",
+    )
     limitations: list[str] = Field(
         default_factory=list, description="系统自己声明的局限（如：未获得全文，仅依据摘要判断）"
     )

@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     llm_cache_enabled: bool = True
     llm_max_calls_per_run: int = Field(default=30, ge=1, le=500)
 
+    # 计价（用于成本估算）。**故意留成字符串**：没填就是空，报告里显示"未计算"，
+    # 绝不编一个单价出来。单价请到供应商官网查，格式示例：
+    #   VERIMIND_LLM_PRICE_PROMPT_PER_MTOK=2      # 每百万 prompt token 多少元
+    #   VERIMIND_LLM_PRICE_COMPLETION_PER_MTOK=8  # 每百万 completion token 多少元
+    llm_price_prompt_per_mtok: str = ""
+    llm_price_completion_per_mtok: str = ""
+
     # ---------------- 文献检索（免密钥） ----------------
     retrieve_enabled: bool = True
     retrieval_mailto: str = "verimind-demo@example.com"
@@ -165,6 +172,36 @@ class Settings(BaseSettings):
         if len(key) <= 8:
             return "已配置（长度过短，建议检查）"
         return f"{key[:3]}****{key[-4:]}"
+
+    @property
+    def token_prices(self) -> tuple[float, float] | None:
+        """返回 (每百万 prompt token 单价, 每百万 completion token 单价)；未配置则返回 None。
+
+        没有单价就**不计算成本**——报告里会写"未计算"并说明怎么配置，
+        而不是拿一个编造的单价算出看起来很专业的数字。
+        """
+        try:
+            prompt_price = float(self.llm_price_prompt_per_mtok)
+            completion_price = float(self.llm_price_completion_per_mtok)
+        except (TypeError, ValueError):
+            return None
+        if prompt_price < 0 or completion_price < 0:
+            return None
+        if prompt_price == 0 and completion_price == 0:
+            return None
+        return prompt_price, completion_price
+
+    def estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> float | None:
+        """按配置的单价估算成本（单位与单价一致，通常是人民币元）。"""
+        prices = self.token_prices
+        if prices is None:
+            return None
+        prompt_price, completion_price = prices
+        return round(
+            prompt_tokens / 1_000_000 * prompt_price
+            + completion_tokens / 1_000_000 * completion_price,
+            6,
+        )
 
     def ensure_data_dirs(self) -> dict[str, Path]:
         """创建本地数据目录，返回路径表（首次运行会自动建）。"""

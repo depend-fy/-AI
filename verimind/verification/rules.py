@@ -56,8 +56,8 @@ RULE_LIBRARY: dict[str, str] = {
     "I2": "同一指标在原文中出现了两个不同的数值 → 来源冲突（证据来自原文内部）",
     "U1": "观点 / 预测类内容不属于可用外部证据核验的事实主张 → 暂无法核验",
     "N1": "该主张需要外部证据才能判断，而本次未启用检索 → 证据不足（不判定为错误）",
-    "N2": "原文给出了具体数值，但整句中没有任何可核验的出处 → 证据不足 + 缺少必要证据",
-    "N3": "使用了「证明 / 证实 / 充分说明」等强因果表述，却没有给出具体来源 → 证据不足 + 逻辑推断过度",
+    "N2": "原文在这一处给出了具体数值，却没有任何可核验的出处 → 证据不足 + 缺少必要证据",
+    "N3": "用了强因果 / 结论性表述（证明、证实、充分说明等），却没有具体来源 → 证据不足 + 逻辑推断过度",
     "N4": "用「大量研究表明」这类模糊表述支撑结论，但没有具体来源 → 证据不足 + 缺少必要证据",
     "N5": "DOI 格式不合法（前缀应为 4~9 位数字）→ 证据不足 + 引用不存在或元数据不匹配（疑似，未证实）",
 }
@@ -143,6 +143,20 @@ def internal_evidence_for_conflicts(
     return evidence, ids_by_claim
 
 
+def _overlaps(first: Span, second: Span) -> bool:
+    return first.start < second.end and second.start < first.end
+
+
+def _overlapping(matches: list, span: Span) -> list:
+    """取出与给定片段有重叠的匹配项。
+
+    为什么要按"重叠"而不是"在不在句子里"判断？
+    真实大模型给出的原文引用往往比规则引擎更宽（例如把 `DOI: 10.xxxx/...` 整段都引上），
+    如果只判断"主张片段的文字本身像不像 DOI / 数字"，这类判断就会漏掉。
+    """
+    return [match for match in matches if _overlaps(match.span, span)]
+
+
 def evaluate_claim(claim: Claim, context: AdjudicationContext) -> VerificationResult:
     """对一条主张作出裁决。规则命中是"加法"：可以同时命中多条。"""
     signals: SentenceSignals = context.analysis.for_span(
@@ -191,40 +205,64 @@ def evaluate_claim(claim: Claim, context: AdjudicationContext) -> VerificationRe
 
     # ---------------- ③ 逐个检查"文本本身已暴露的问题" ----------------
     # N5：DOI 格式不合法
+    # 注意两种触发方式都要有：
+    #   ① 主张片段本身就是一个不合规 DOI（规则引擎给的精确片段）；
+    #   ② 句子里出现的不合规 DOI 与该主张片段重叠（大模型常把 "DOI: " 前缀一起引用）。
     span_text = claim.source_span.text
-    if (
-        claim.claim_type is ClaimType.DOI_VALIDITY
-        and looks_like_doi(span_text)
-        and not is_valid_doi_prefix(span_text)
-    ):
+    invalid_hits = _overlapping(signals.invalid_dois, claim.source_span)
+    span_is_invalid_doi = looks_like_doi(span_text) and not is_valid_doi_prefix(span_text)
+    if claim.claim_type is ClaimType.DOI_VALIDITY and (invalid_hits or span_is_invalid_doi):
+        shown = invalid_hits[0].text if invalid_hits else span_text
         problem_types.append(ProblemType.CITATION_MISSING)
         matched_rules.append("N5")
         reasons.append(
-            f"原文引用的 DOI「{span_text}」不符合 DOI 语法（前缀应为 4~9 位数字），"
+            f"原文引用的 DOI「{shown}」不符合 DOI 语法（前缀应为 4~9 位数字），"
             "这类写法常见于占位符或凭空生成的引用。"
         )
         missing.append("需要通过 DOI 注册机构（Crossref）确认该 DOI 是否存在——目前格式已不合规。")
         severity = Severity.MEDIUM
 
     # N2：给出具体数值，但整句没有任何可核验出处
-    if claim.claim_type is ClaimType.QUANTITATIVE and not signals.has_concrete_source:
+    # 双重条件：① 主张类型是数值类；② 主张片段里**确实**含有数值。
+    # 第 ② 条是为了防止"模型把不含数字的论断标成数值类"时产生误报。
+    number_hits = _overlapping(
+        [*signals.percents, *signals.strong_quantities, *signals.weak_quantities],
+        claim.source_span,
+    )
+    if (
+        claim.claim_type is ClaimType.QUANTITATIVE
+        and not signals.has_concrete_source
+        and number_hits
+    ):
+        invalid_note = ""
+        if signals.invalid_dois:
+            invalid_note = (
+                f"（句中出现的「{signals.invalid_dois[0].text}」格式不合规，不构成可核验来源）"
+            )
         problem_types.append(ProblemType.MISSING_EVIDENCE)
         matched_rules.append("N2")
         reasons.append(
-            f"原文给出了具体数值（{span_text}），但这句话里没有任何可核验的出处"
-            "（没有 DOI、文献标题、期刊名或链接）。"
+            f"原文在这一处给出了具体数值（{span_text[:40]}），"
+            f"但整句里没有任何可核验的出处{invalid_note}。"
         )
         missing.append("需要找到该数值的原始出处，才能判断数字是否被夸大或写错。")
         severity = Severity.MEDIUM if severity is Severity.NONE else severity
 
-    # N3：强因果表述却没有具体来源
+    # N3：强因果 / 结论性表述却没有具体来源
     if claim.claim_type is ClaimType.CAUSAL and not signals.has_concrete_source:
         problem_types.append(ProblemType.OVERREACH)
         matched_rules.append("N3")
-        reasons.append(
-            "原文使用了「证明 / 证实 / 充分说明」这类强因果表述，但没有给出具体的来源，"
-            "推断强度超过了可提供的证据。"
-        )
+        if signals.causal_words:
+            word = signals.causal_words[0].text
+            reasons.append(
+                f"原文使用了「{word}」这类强因果表述，但没有给出具体的来源，"
+                "推断强度超过了可提供的证据。"
+            )
+        else:
+            reasons.append(
+                "原文把该说法表述为因果或结论性判断，但整句没有任何可核验的出处，"
+                "推断强度可能超过了可提供的证据。"
+            )
         missing.append("需要具体来源（DOI、标题或期刊）以及该来源是否支持该因果结论。")
         severity = Severity.MEDIUM if severity is Severity.NONE else severity
 

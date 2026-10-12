@@ -17,10 +17,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from verimind.claims.preprocess import DocumentAnalysis, TextMatch, analyze_text
+from verimind.core.enums import ClaimType
 from verimind.core.schemas import Claim, Span
 
 #: 指标词与数值之间最多隔多少字符还算同一个论断
 _METRIC_VALUE_MAX_GAP = 24
+
+#: 各类冲突只挂到"确实在谈这件事"的主张类型上。
+#: 为什么必须这样限制：大模型给出的引用片段往往更宽（可能把整句都引上），
+#: 如果只按"区间重叠"归属，就会出现"期刊类主张被标成年份冲突"这种过度归因——
+#: 那等于给用户安了一个它没说过的错。
+_CONFLICT_CLAIM_TYPES: dict[str, frozenset[ClaimType]] = {
+    "doi_year": frozenset({ClaimType.METADATA_YEAR}),
+    "metric_value": frozenset({ClaimType.QUANTITATIVE}),
+}
 
 
 @dataclass(frozen=True)
@@ -38,10 +48,14 @@ class InternalConflict:
         return "I1" if self.kind == "doi_year" else "I2"
 
 
-def _claims_touching(claims: list[Claim], spans: list[Span]) -> list[str]:
-    """找出与给定片段有重叠的主张 ID（用于把冲突挂到具体主张上）。"""
+def _claims_touching(
+    claims: list[Claim], spans: list[Span], allowed_types: frozenset[ClaimType] | None = None
+) -> list[str]:
+    """找出与给定片段有重叠、且类型匹配的主张 ID（用于把冲突挂到具体主张上）。"""
     ids: list[str] = []
     for claim in claims:
+        if allowed_types is not None and claim.claim_type not in allowed_types:
+            continue
         span = claim.source_span
         for other in spans:
             if span.start < other.end and other.start < span.end:
@@ -82,10 +96,10 @@ def _doi_year_conflicts(analysis: DocumentAnalysis, claims: list[Claim]) -> list
                     f"{year_a} 年 与 {year_b} 年。同一篇文献不可能有两个发表年份，"
                     "至少有一处是错的（具体哪个正确需要核对文献本身）。"
                 ),
-                # 只把"年份类主张"挂到这个冲突上。
-                # DOI 是否存在这件事本身并没有因为年份矛盾而变得更可疑，
-                # 把它一起标成"来源冲突"是过度归因。
-                claim_ids=_claims_touching(claims, fragments),
+                # 只把"年份类主张"挂到这个冲突上（详见 _CONFLICT_CLAIM_TYPES 的说明）。
+                claim_ids=_claims_touching(
+                    claims, fragments, _CONFLICT_CLAIM_TYPES["doi_year"]
+                ),
             )
         )
     return conflicts
@@ -159,7 +173,9 @@ def _metric_value_conflicts(
                     f"{_fmt(value_a)} 与 {_fmt(value_b)}。同一指标在同一段文字里应当一致，"
                     "需要确认哪个数值是正确的。"
                 ),
-                claim_ids=_claims_touching(claims, fragments),
+                claim_ids=_claims_touching(
+                    claims, fragments, _CONFLICT_CLAIM_TYPES["metric_value"]
+                ),
             )
         )
     return conflicts
