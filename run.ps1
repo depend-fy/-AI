@@ -4,6 +4,13 @@
 #     powershell -ExecutionPolicy Bypass -File .\run.ps1
 #     powershell -ExecutionPolicy Bypass -File .\run.ps1 -Port 8600
 #
+# 重要：本文件必须以 UTF-8 with BOM 保存！
+#   Windows PowerShell 5.1 默认按系统 ANSI（中文系统上是 GBK）读取无 BOM 的 .ps1，
+#   文件里的中文会被解成乱码并吞掉字符串的结束引号，报「字符串缺少终止符」而无法运行。
+#   PowerShell 7 默认按 UTF-8 读，所以同一个文件在 pwsh 下是好的——不要因此以为没问题。
+#   用记事本另存为时请选「UTF-8」（带 BOM），或用 Python 写：
+#       pathlib.Path("run.ps1").write_text(text, encoding="utf-8-sig")
+#
 # 它做了三件事：
 #   1. 把当前终端切到 UTF-8，避免中文乱码
 #   2. 检查虚拟环境和依赖是否存在，缺了就给明确提示
