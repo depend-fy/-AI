@@ -16,8 +16,16 @@
 | 阶段 3 | 接入真实大模型（交叉比对、缓存、成本统计、失败降级） | ✅ 已完成 |
 | 阶段 4 | 文献检索与证据核验（Crossref / OpenAlex / arXiv） | ✅ 已完成 |
 | 阶段 5 | 修正与独立复核（角色 C 修正 / 角色 D 复核） | ✅ 已完成 |
-| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | ✅ 已完成（**当前**） |
-| 阶段 7 | 比赛展示准备 | ⏳ 未开始 |
+| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | ✅ 已完成 |
+| 阶段 7 | 比赛展示准备（演示脚本、架构、实验报告、答辩材料） | ✅ 已完成（**当前**） |
+
+### 展示材料（阶段 7 产出）
+
+| 文档 | 内容 |
+| --- | --- |
+| [`docs/07-demo-script.md`](docs/07-demo-script.md) | 8 分钟四幕演示脚本：每幕的输入、真实预期输出、话术、断网兜底、11 张截图清单 |
+| [`docs/07-architecture-and-innovation.md`](docs/07-architecture-and-innovation.md) | 技术架构图 + 11 步数据流 + **五个核心创新点** + 角色分工 |
+| [`docs/07-experiment-and-defense.md`](docs/07-experiment-and-defense.md) | 实验设置与真实结果、**10 条局限**、后续规划、**12 个答辩 Q&A**、讲稿要点 |
 
 ### 现在能做什么
 
@@ -115,6 +123,9 @@ Copy-Item .env.example .env    # 然后用记事本填 VERIMIND_LLM_API_KEY
 
 测试集：`examples/golden_set.jsonl`，**20 条**，覆盖 7 类。凡涉及文献的用例，真值都用 Crossref **实测**确认过
 （该 DOI 是否存在、实际年份是多少），并写进每条用例的 `source_of_truth` 字段。
+标注状态：**4 条已经人工逐条确认**（G10/G11/G12/G20，确认意见记在 `human_comment` 字段），
+其余 16 条为 AI 起草、待确认——评测页会显示这个比例，**在全部确认前不把整体指标表述为「人工标注结果」**。
+（`examples/golden_set_review.csv` 是为方便逐条抽查导出的 Excel 友好表格。）
 
 **B1 下界基线**（离线规则引擎 + 不检索，**完全免费**，20 条全跑）：
 
@@ -158,11 +169,11 @@ Copy-Item .env.example .env    # 然后用记事本填 VERIMIND_LLM_API_KEY
 ## 四、如何测试
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q          # 234 passed（默认跳过 live 测试）
+.\.venv\Scripts\python.exe -m pytest -q          # 235 passed（默认跳过 live 测试）
 .\.venv\Scripts\python.exe -m pytest -m live -q  # 只跑真实调用测试（会花钱）
 ```
 
-**当前状态（已实测）**：`234 passed`，除标记为 `live` 的之外全部离线可跑、零成本。
+**当前状态（已实测）**：`235 passed`，除标记为 `live` 的之外全部离线可跑、零成本。
 
 | 测试文件 | 盯住什么问题 |
 | --- | --- |

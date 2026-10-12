@@ -222,6 +222,8 @@ def run_evaluation(
     metrics = compute_metrics(outcomes, needs_correction)
 
     ai_labelled = sum(1 for case in selected if case.labeler_is_ai)
+    awaiting = sum(1 for case in selected if case.awaiting_confirmation)
+    confirmed = len(selected) - awaiting
     caveats: list[str] = [
         (
             f"**样本量只有 {len(selected)} 条**，按类别分组后每类仅 2–3 条；"
@@ -246,10 +248,21 @@ def run_evaluation(
             "真正可靠的评测应由**不了解系统实现的人独立标注**，再与系统输出比对。"
         ),
     ]
+    if awaiting:
+        caveats.append(
+            f"标注状态：本次涉及的用例中 **{confirmed}/{len(selected)} 条已由人工逐条确认**，"
+            f"仍有 {awaiting} 条为 AI 起草、等待人工抽查确认。"
+            "在全部确认之前，请不要把这些数字对外表述为「人工标注结果」。"
+        )
+    else:
+        caveats.append(
+            f"标注状态：本次涉及的 {len(selected)} 条用例**全部经人工逐条确认**"
+            "（确认意见记录在标注集的 human_comment 字段里）。"
+        )
     if ai_labelled:
         caveats.append(
-            f"标注状态：{ai_labelled}/{len(selected)} 条为**AI 起草**、等待人工抽查确认；"
-            "在人工确认之前，请不要把这些数字对外表述为「人工标注结果」。"
+            "标注起草方式：AI 起草（与被测系统同一模型家族）；人工确认只判断「标注是否合理」，"
+            "并未重新独立标注全文——因此它仍不能替代「由不知情者独立标注」的评测。"
         )
 
     engine = "离线规则引擎（不检索）" if settings.llm_provider == "mock" else f"{settings.llm_provider}/{settings.llm_model}"

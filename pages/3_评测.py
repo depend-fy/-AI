@@ -51,34 +51,41 @@ except (FileNotFoundError, ValueError) as exc:
 
 category_list = categories(cases)
 ai_labelled = sum(1 for case in cases if case.labeler_is_ai)
+human_confirmed = sum(1 for case in cases if case.human_confirmed)
 
 st.markdown("#### 📚 测试集概览")
 stat_cols = st.columns(4)
 stat_cols[0].metric("用例总数", len(cases))
 stat_cols[1].metric("覆盖类别", len(category_list))
-stat_cols[2].metric("AI 起草标注", ai_labelled)
-stat_cols[3].metric("已人工确认", len(cases) - ai_labelled)
+stat_cols[2].metric("人工已确认", human_confirmed)
+stat_cols[3].metric("待人工确认", len(cases) - human_confirmed)
 
 st.markdown(
     badge(f"来源：{GOLDEN_PATH.name}", fg="#3a5a8c", bg="#eef3fb", border="#b9cbe8")
     + badge(
-        f"AI 起草 {ai_labelled} 条，待人工抽查确认" if ai_labelled else "全部为人工确认",
-        fg="#a15c07" if ai_labelled else "#1a7f37",
-        bg="#fff6e5" if ai_labelled else "#e9f7ee",
-        border="#f2d08a" if ai_labelled else "#a7e0b8",
+        f"人工已确认 {human_confirmed} 条" if human_confirmed else "尚无人工确认",
+        fg="#1a7f37" if human_confirmed else "#5f6b7a",
+        bg="#e9f7ee" if human_confirmed else "#f4f5f7",
+        border="#a7e0b8" if human_confirmed else "#d5d9df",
+    )
+    + badge(
+        f"待人工确认 {len(cases) - human_confirmed} 条",
+        fg="#a15c07" if len(cases) - human_confirmed else "#1a7f37",
+        bg="#fff6e5" if len(cases) - human_confirmed else "#e9f7ee",
+        border="#f2d08a" if len(cases) - human_confirmed else "#a7e0b8",
     ),
     unsafe_allow_html=True,
 )
 st.info(
     "**这些标注怎么来的**：凡涉及文献的用例，真值都用 Crossref **实测**确认过"
-    "（该 DOI 是否存在、实际发表年份是多少），并把实测结论写进每条用例的「真值来源」字段；"
-    "构造类用例（证据不足、文内矛盾）的真值来自文本自身。"
-    "标注者字段里所有含「AI 起草」的用例都**还没有经你逐条确认**——"
-    "在确认之前，请不要把这些数字对外说成「人工标注结果」。",
+    "（该 DOI 是否存在、实际发表年份是多少），并把实测结论写进每条用例的「真值来源」字段。"
+    f"其中 {human_confirmed} 条已经过人工逐条确认，"
+    f"仍有 {len(cases) - human_confirmed} 条为 AI 起草、等待确认——"
+    "在**全部**确认之前，请不要把整体指标对外表述为「人工标注结果」。",
     icon="ℹ️",
 )
 
-with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源与标注者）", expanded=False):
+with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源、标注者与人工确认意见）", expanded=False):
     st.dataframe(
         pd.DataFrame(
             [
@@ -91,6 +98,8 @@ with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源与标�
                     "标注问题类型": "、".join(item.value for item in case.gold_problem_types),
                     "真值来源": case.source_of_truth,
                     "标注者": case.labeler,
+                    "人工确认": "✅ 已确认" if case.human_confirmed else "⏳ 待确认",
+                    "确认意见": case.human_comment,
                 }
                 for case in cases
             ]

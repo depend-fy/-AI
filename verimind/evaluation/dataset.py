@@ -38,6 +38,15 @@ class GoldenCase(VeriMindModel):
     source_of_truth: str = Field(min_length=1, description="真值是怎么确认的")
     labeler: str = Field(min_length=1, description="标注者（含 AI 时必须写明）")
     label_date: str = ""
+    human_confirmed: bool = Field(
+        default=False, description="是否已由人工逐条确认（未确认的不能被表述为「人工标注结果」）"
+    )
+    human_comment: str = Field(default="", description="人工确认时的意见")
+
+    @property
+    def awaiting_confirmation(self) -> bool:
+        """还没经人工确认——评测页必须把这一部分单独标出来。"""
+        return not self.human_confirmed
 
     @property
     def gold_is_problem(self) -> bool:

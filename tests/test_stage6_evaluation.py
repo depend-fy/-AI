@@ -75,10 +75,21 @@ def test_golden_set_covers_all_required_categories() -> None:
 
 
 def test_golden_set_flags_ai_drafted_labels() -> None:
-    """AI 起草的标注必须能被程序识别出来（评测页据此显示警告）。"""
+    """AI 起草的标注必须能被识别；已人工确认的必须有确认记录。"""
     cases = load_golden_set(GOLDEN)
     assert any(case.labeler_is_ai for case in cases)
-    assert all("待人工抽查确认" in case.labeler for case in cases if case.labeler_is_ai)
+    assert all(
+        "待人工抽查确认" in case.labeler
+        for case in cases
+        if case.labeler_is_ai and not case.human_confirmed
+    ), "未经人工确认的标注必须写明「待人工抽查确认」"
+
+    confirmed = [case for case in cases if case.human_confirmed]
+    assert confirmed, "至少应该有用例经过人工确认"
+    for case in confirmed:
+        assert "人工确认" in case.labeler
+        assert case.human_comment, f"{case.case_id} 标为已确认，却没有确认意见"
+        assert case.awaiting_confirmation is False
 
 
 # ==========================================================================
