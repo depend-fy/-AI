@@ -111,6 +111,16 @@ class Span(VeriMindModel):
         """校验该片段在给定原文中确实位于同一位置（用于报告自检）。"""
         return full_text[self.start : self.end] == self.text
 
+    def relative_to(self, parent: "Span") -> "Span | None":
+        """把本片段换算成"相对于父片段"的区间（用于在整句里高亮其中的一个词）。
+
+        区间不在父片段内时返回 None，绝不硬算出一个错位的高亮。
+        """
+        if not (parent.start <= self.start and self.end <= parent.end):
+            return None
+        offset = self.start - parent.start
+        return Span.from_text(parent.text, offset, offset + len(self.text))
+
 
 class SearchRecord(VeriMindModel):
     """一次检索动作的记录：查了哪个源、用了什么检索式、结果如何。
@@ -119,12 +129,22 @@ class SearchRecord(VeriMindModel):
     同时也是向用户证明"系统真的去查了"。
     """
 
-    source: EvidenceSource
+    source: EvidenceSource | None = Field(
+        default=None, description="检索来源；标记为「未检索」时可以留空"
+    )
     query: str = Field(min_length=1)
     status: SearchStatus = SearchStatus.OK
     hit_count: int = Field(default=0, ge=0)
     error: str | None = None
     detail: str = ""
+
+    @model_validator(mode="after")
+    def _require_source_unless_skipped(self) -> "SearchRecord":
+        if self.status is not SearchStatus.SKIPPED and self.source is None:
+            raise ValueError(
+                "只有「未检索」状态才允许不写检索来源；其余状态必须说明查的是哪个源。"
+            )
+        return self
 
 
 class SearchTrace(VeriMindModel):
@@ -144,7 +164,7 @@ class SearchTrace(VeriMindModel):
 
     @property
     def searched_sources(self) -> list[str]:
-        return sorted({str(r.source.value) for r in self.records})
+        return sorted({str(r.source.value) for r in self.records if r.source is not None})
 
 
 class RolePosition(VeriMindModel):
@@ -165,7 +185,10 @@ class Claim(VeriMindModel):
     """一条可单独核验的原子事实主张。"""
 
     claim_id: str = Field(pattern=r"^C\d{3,}$", description="形如 C001，报告内唯一")
-    source_span: Span = Field(description="该主张在原文中的位置")
+    source_span: Span = Field(description="该主张在原文中的位置（尽可能精确到最小片段）")
+    parent_sentence_span: Span | None = Field(
+        default=None, description="该主张所在的整句，用于在报告中提供上下文"
+    )
     normalized_claim: str = Field(min_length=1, description="规范化后的主张表述")
     claim_type: ClaimType
     priority: ClaimPriority = ClaimPriority.P1
@@ -191,6 +214,46 @@ class Claim(VeriMindModel):
 
 
 # ==========================================================================
+# 一之二、主张拆解的中间产物（规则引擎与大模型共用的输出格式）
+# ==========================================================================
+class ClaimDraft(VeriMindModel):
+    """一条"待落地"的主张草稿。
+
+    为什么不让模型直接输出 Claim？因为 Claim 需要精确的字符偏移（start/end），
+    而语言模型只会给文本、很容易数错位置。所以拆解方只负责**引用原文**，
+    由代码用 `find_span()` 把引用换算成偏移——定位不到就丢弃该条，绝不硬凑。
+
+    这样设计还有一个好处：规则引擎和大模型共用同一种输出格式，
+    阶段 3 接入大模型时，下游代码一行都不用改。
+    """
+
+    quote: str = Field(min_length=1, description="原文引用，必须与原文完全一致（用于自动定位）")
+    normalized_claim: str = Field(min_length=1, description="规范化后的主张表述")
+    claim_type: ClaimType
+    priority: ClaimPriority = ClaimPriority.P1
+    checkability: Checkability = Checkability.CHECKABLE
+    verification_questions: list[str] = Field(default_factory=list)
+    confidence: ExtractionConfidence = ExtractionConfidence.MEDIUM
+
+    @model_validator(mode="after")
+    def _require_questions(self) -> "ClaimDraft":
+        if self.checkability is not Checkability.NOT_CHECKABLE and not self.verification_questions:
+            raise ValueError(
+                f"主张「{self.normalized_claim[:30]}…」标记为可核验，但没有给出核验问题。"
+            )
+        return self
+
+
+class ClaimExtraction(VeriMindModel):
+    """一次主张拆解的完整输出。"""
+
+    claims: list[ClaimDraft] = Field(default_factory=list)
+    notes: list[str] = Field(
+        default_factory=list, description="拆解方自己的说明（例如「文本中没有可核验的事实主张」）"
+    )
+
+
+# ==========================================================================
 # 二、外部证据
 # ==========================================================================
 class Evidence(VeriMindModel):
@@ -207,7 +270,12 @@ class Evidence(VeriMindModel):
     claim_ids: list[str] = Field(default_factory=list, description="关联的主张 ID")
     source: EvidenceSource
     level: EvidenceLevel
-    url: str = Field(min_length=1, description="真实可点击的来源地址")
+    url: str | None = Field(
+        default=None, description="真实可点击的来源地址；外部来源必填，原文内部证据留空"
+    )
+    source_span: Span | None = Field(
+        default=None, description="原文内部证据（source=原文内部）在原文中的位置"
+    )
     title: str = ""
     doi: str | None = None
     authors: list[str] = Field(default_factory=list)
@@ -224,8 +292,21 @@ class Evidence(VeriMindModel):
 
     @model_validator(mode="after")
     def _check_consistency(self) -> "Evidence":
-        if not self.url.lower().startswith(("http://", "https://")):
-            raise ValueError(f"{self.evidence_id} 的 url 不是可点击的 http(s) 地址：{self.url!r}")
+        if self.source.is_external:
+            if not self.url or not self.url.lower().startswith(("http://", "https://")):
+                raise ValueError(
+                    f"{self.evidence_id} 来自外部来源（{self.source.value}），"
+                    f"必须给出真实可点击的 http(s) 链接，当前为：{self.url!r}"
+                )
+        else:
+            if self.source_span is None:
+                raise ValueError(
+                    f"{self.evidence_id} 是原文内部证据，必须给出 source_span 以便在报告中高亮定位。"
+                )
+            if not (self.snippet or "").strip():
+                raise ValueError(
+                    f"{self.evidence_id} 是原文内部证据，必须给出 snippet（引用的原文片段）。"
+                )
 
         judged = self.relation in (
             EvidenceRelation.SUPPORTS,
@@ -250,10 +331,16 @@ class Evidence(VeriMindModel):
 
     @property
     def display_name(self) -> str:
+        if self.source is EvidenceSource.INTERNAL and self.source_span is not None:
+            return f"原文片段：{self.source_span.text}"
         if self.title:
             year = f"（{self.year}）" if self.year else ""
             return f"{self.title}{year}"
-        return self.doi or self.url
+        return self.doi or self.url or self.evidence_id
+
+    @property
+    def is_internal(self) -> bool:
+        return not self.source.is_external
 
 
 # ==========================================================================
@@ -318,7 +405,21 @@ class VerificationResult(VeriMindModel):
 
     @property
     def is_suspicious(self) -> bool:
+        """是否已被**判定**有问题（存在矛盾 / 部分支持 / 来源冲突）。
+
+        注意：「证据不足」「暂无法核验」不算 —— 查不到不等于有错。
+        """
         return self.status in SUSPICIOUS_STATUSES
+
+    @property
+    def requires_attention(self) -> bool:
+        """是否需要人工关注。
+
+        比 `is_suspicious` 宽：包含"尚未证实但已发现疑点"的情况
+        （例如给出了具体数值却没有任何出处、DOI 格式不合规）。
+        两个计数必须分开显示，否则会出现"可疑主张 0，却有几条标着问题类型"的自相矛盾。
+        """
+        return bool(self.problem_types) or self.severity in (Severity.MEDIUM, Severity.HIGH)
 
 
 # ==========================================================================
@@ -416,7 +517,12 @@ class ReportStats(VeriMindModel):
     total_claims: int = Field(default=0, ge=0)
     status_counts: dict[str, int] = Field(default_factory=dict)
     problem_counts: dict[str, int] = Field(default_factory=dict)
-    suspicious_claims: int = Field(default=0, ge=0)
+    suspicious_claims: int = Field(
+        default=0, ge=0, description="已判定有问题的主张数（存在矛盾/部分支持/来源冲突）"
+    )
+    flagged_claims: int = Field(
+        default=0, ge=0, description="需要关注的主张数（含尚未证实的疑点与证据缺口）"
+    )
     corrections_count: int = Field(default=0, ge=0)
     reviews_passed: int = Field(default=0, ge=0)
     reviews_failed: int = Field(default=0, ge=0)
@@ -589,6 +695,7 @@ class DetectionReport(VeriMindModel):
             status_counts=status_counts,
             problem_counts={k: v for k, v in problem_counts.items() if v},
             suspicious_claims=sum(1 for r in self.verification_results if r.is_suspicious),
+            flagged_claims=sum(1 for r in self.verification_results if r.requires_attention),
             corrections_count=len(self.corrections),
             reviews_passed=sum(1 for r in self.review_results if r.overall is ReviewOverall.PASSED),
             reviews_failed=sum(1 for r in self.review_results if r.overall is ReviewOverall.FAILED),

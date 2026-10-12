@@ -130,6 +130,14 @@ class EvidenceSource(_ZhEnum):
     EUROPE_PMC = "Europe PMC"
     MANUAL = "人工提供"
     WEBPAGE = "网页"
+    #: 证据来自用户原文自身（例如"文内自相矛盾"：同一文献在原文里出现了两个年份）。
+    #: 这类证据不需要、也不允许伪造外部 URL，但必须给出原文定位。
+    INTERNAL = "原文内部"
+
+    @property
+    def is_external(self) -> bool:
+        """外部来源必须提供真实可点击的 URL；原文内部证据不需要。"""
+        return self is not EvidenceSource.INTERNAL
 
 
 class EvidenceLevel(_ZhEnum):
@@ -143,6 +151,7 @@ class EvidenceLevel(_ZhEnum):
     ABSTRACT = "摘要"
     FULLTEXT = "全文"
     WEBPAGE = "网页内容"
+    USER_TEXT = "用户原文"
 
 
 class EvidenceRelation(_ZhEnum):
@@ -157,6 +166,7 @@ class MatchBasis(_ZhEnum):
     METADATA = "元数据匹配"
     ABSTRACT = "摘要匹配"
     FULLTEXT = "全文匹配"
+    INTERNAL = "文内比对"
     NONE = "未匹配"
 
 

@@ -45,15 +45,28 @@ def test_home_page_shows_real_project_info() -> None:
     assert "当前运行模式" in markdown_text
     assert "离线模拟" in markdown_text
 
-    # 首页必须明确说明检测功能尚未实现，不允许让占位页看起来像已经能用了
+    # 首页必须如实声明当前能力边界（阶段 2：未接入外部检索与修正复核）
     info_text = "\n".join(element.value for element in app.info)
-    assert "尚未实现" in info_text
+    assert "尚未接入" in info_text
 
 
-def test_placeholder_pages_refuse_to_fake_results() -> None:
-    """三个占位页都必须显式说明"本页尚未实现"，不允许显示编造的数据。"""
-    for script in PAGE_SCRIPTS[1:]:
+def test_evaluation_page_is_still_an_honest_placeholder() -> None:
+    """尚未实现的页面必须显式声明"本页尚未实现"，不允许显示编造的数据。
+
+    阶段 2 之后，工作台与报告页已经实现；「评测」页要到阶段 6 才有真实数据，
+    因此这里只对它做断言。
+    """
+    script = "pages/3_评测.py"
+    app = AppTest.from_file(str(PROJECT_ROOT / script), default_timeout=120)
+    app.run()
+    info_text = "\n".join(element.value for element in app.info)
+    assert "尚未实现" in info_text, f"{script} 没有说明自己是占位页"
+
+
+def test_implemented_pages_do_not_claim_to_be_placeholders() -> None:
+    """已经实现的页面不能还挂着"尚未实现"的牌子——那同样是不诚实的展示。"""
+    for script in ("pages/1_检测工作台.py", "pages/2_检测报告.py"):
         app = AppTest.from_file(str(PROJECT_ROOT / script), default_timeout=120)
         app.run()
         info_text = "\n".join(element.value for element in app.info)
-        assert "尚未实现" in info_text, f"{script} 没有说明自己是占位页"
+        assert "尚未实现" not in info_text, f"{script} 已经是实现页，却仍显示占位提示"

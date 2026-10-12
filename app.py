@@ -21,7 +21,12 @@ from verimind.core.enums import (
     ProblemType,
     STATUS_DISPLAY_ORDER,
 )
-from verimind.ui.theme import render_config_warnings, render_run_mode_banner, status_badge_html
+from verimind.ui.theme import (
+    render_config_warnings,
+    render_run_mode_banner,
+    safe_page_link,
+    status_badge_html,
+)
 
 st.set_page_config(
     page_title="智鉴 AI（VeriMind AI）",
@@ -123,14 +128,14 @@ st.divider()
 st.markdown("#### 🚀 开始使用")
 nav1, nav2, nav3 = st.columns(3)
 with nav1:
-    st.page_link("pages/1_检测工作台.py", label="检测工作台", icon="🧪")
+    safe_page_link("pages/1_检测工作台.py", label="检测工作台", icon="🧪")
     st.caption("粘贴待核验文本，启动检测")
 with nav2:
-    st.page_link("pages/2_检测报告.py", label="检测报告", icon="📄")
+    safe_page_link("pages/2_检测报告.py", label="检测报告", icon="📄")
     st.caption("查看主张、证据、问题与修正")
 with nav3:
-    st.page_link("pages/3_评测.py", label="评测", icon="📈")
-    st.caption("在人工标注集上的真实指标")
+    safe_page_link("pages/3_评测.py", label="评测", icon="📈")
+    st.caption("在人工标注集上的真实指标（阶段 6）")
 
 # ---------------------------------------------------------------- 真实环境状态
 st.divider()
@@ -185,8 +190,8 @@ st.markdown(
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | 阶段 0 | 需求冻结与技术方案 | ✅ 已完成 |
-| 阶段 1 | 开发环境与项目骨架 | ✅ 已完成（当前） |
-| 阶段 2 | 基础检测流程（离线可跑） | ⏳ 未开始 |
+| 阶段 1 | 开发环境与项目骨架 | ✅ 已完成 |
+| 阶段 2 | 基础检测流程（离线可跑） | ✅ 已完成（当前） |
 | 阶段 3 | 接入真实大模型 | ⏳ 未开始 |
 | 阶段 4 | 文献检索与证据核验 | ⏳ 未开始 |
 | 阶段 5 | 修正与独立复核 | ⏳ 未开始 |
@@ -195,9 +200,12 @@ st.markdown(
 """
 )
 st.info(
-    "**当前状态说明**：阶段 1 只完成了工程骨架与环境验证。检测流程、证据检索、修正与复核"
-    "均为**尚未实现**，因此「检测工作台 / 检测报告 / 评测」三页目前是占位页，不显示任何结果。"
-    "这样做的原因很简单：宁可页面空着，也不放看起来像真数据的假内容。",
+    "**当前能力（阶段 2）**：可以完整跑通「文本 → 原子主张拆解 → 文内一致性检查 → 规则裁决 → 报告」，"
+    "**完全离线、不需要任何 API 密钥**。主张拆解由规则引擎（正则 + 关键词）完成，"
+    "报告中会如实标注「离线模拟」。\n\n"
+    "**尚未接入**：外部文献检索（阶段 4）与修正 / 独立复核（阶段 5）。"
+    "因此报告里不会出现「已核实」，也不会因为外部证据出现「存在矛盾」——"
+    "需要外部证据的主张一律标记为「证据不足」，这不代表内容有误。",
     icon="ℹ️",
 )
 

@@ -173,6 +173,20 @@ def section(title: str, caption: str | None = None, *, divider: bool = True) -> 
         st.caption(caption)
 
 
+def safe_page_link(page: str, *, label: str, icon: str | None = None) -> None:
+    """多页跳转链接（带降级保护）。
+
+    为什么需要它：`st.page_link` 的路径是**相对于主入口文件**解析的。
+    如果某个页面被单独运行（开发时很常见的 `streamlit run pages/2_检测报告.py`），
+    或者运行在不注册页面表的环境里，它会抛出 StreamlitPageNotFoundError 并把整页打挂。
+    与其崩掉，不如降级成一句提示——用户仍然能从左侧导航打开目标页面。
+    """
+    try:
+        st.page_link(page, label=label, icon=icon)
+    except Exception:  # noqa: BLE001 - 任何跳转失败都不值得让页面崩溃
+        st.caption(f"（当前运行方式下无法生成跳转链接，请在左侧页面导航中打开「{label}」）")
+
+
 def placeholder_page(
     *,
     title: str,
