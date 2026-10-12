@@ -38,6 +38,7 @@ from verimind.core.enums import (
     EvidenceRelation,
     EvidenceSource,
     ExtractionConfidence,
+    JudgedAspect,
     LlmCallStatus,
     MatchBasis,
     ProblemType,
@@ -284,6 +285,33 @@ class FactCheckReport(VeriMindModel):
 
 
 # ==========================================================================
+# 一之四、角色 B（证据审查员）的输出
+# ==========================================================================
+class EvidenceAssessment(VeriMindModel):
+    """证据审查员对一对「主张 ↔ 证据」的关系判断。
+
+    严格要求：判断"内容结论是否被支持"时必须引用证据原文片段，
+    否则规则层不会采纳（宁可停在「证据不足」，也不凭空说"论文不支持"）。
+    """
+
+    evidence_id: str
+    claim_id: str
+    relation: EvidenceRelation
+    judged_aspect: JudgedAspect
+    rationale: str = Field(min_length=1, description="判断理由")
+    quoted_snippet: str | None = Field(
+        default=None, description="证据原文中被引用的片段（判断内容层面时必填）"
+    )
+
+
+class EvidenceReviewReport(VeriMindModel):
+    """证据审查员的整体输出。"""
+
+    assessments: list[EvidenceAssessment] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+# ==========================================================================
 # 二、外部证据
 # ==========================================================================
 class Evidence(VeriMindModel):
@@ -319,6 +347,10 @@ class Evidence(VeriMindModel):
     relation: EvidenceRelation = EvidenceRelation.UNKNOWN
     relation_rationale: str = ""
     match_basis: MatchBasis = MatchBasis.NONE
+    judged_aspect: JudgedAspect | None = Field(
+        default=None,
+        description="这条证据被用来判断哪个层面：文献是否存在 / 书目信息 / 内容结论是否被支持",
+    )
 
     @model_validator(mode="after")
     def _check_consistency(self) -> "Evidence":
@@ -343,20 +375,38 @@ class Evidence(VeriMindModel):
             EvidenceRelation.PARTIALLY_SUPPORTS,
             EvidenceRelation.REFUTES,
         )
-        if judged and not self.relation_rationale.strip():
-            raise ValueError(
-                f"{self.evidence_id} 判定为「{self.relation.value}」，但没给出判断理由（relation_rationale）。"
-            )
-        if self.relation is EvidenceRelation.REFUTES and not (self.snippet or "").strip():
-            raise ValueError(
-                f"{self.evidence_id} 判定为「反驳」，但没有引用证据原文片段（snippet）——"
-                "反驳必须能指出原文到底说了什么。"
-            )
-        if self.level is EvidenceLevel.METADATA_ONLY and judged:
-            raise ValueError(
-                f"{self.evidence_id} 只有元数据（无摘要/全文），却给出了"
-                f"「{self.relation.value}」的关系判断。仅凭元数据只能核验文献是否存在与元数据是否一致。"
-            )
+        if judged:
+            if not self.relation_rationale.strip():
+                raise ValueError(
+                    f"{self.evidence_id} 判定为「{self.relation.value}」，"
+                    "但没给出判断理由（relation_rationale）。"
+                )
+            if self.judged_aspect is None:
+                raise ValueError(
+                    f"{self.evidence_id} 给出了「{self.relation.value}」的关系判断，"
+                    "必须说明判断的是哪个层面（judged_aspect）。"
+                )
+            # 核心诚实性约束：没有摘要/全文，就不许判断"内容结论是否被支持"
+            if self.judged_aspect.requires_text and self.level not in (
+                EvidenceLevel.ABSTRACT,
+                EvidenceLevel.FULLTEXT,
+                EvidenceLevel.WEBPAGE,
+            ):
+                raise ValueError(
+                    f"{self.evidence_id} 只有「{self.level.value}」，却要判断"
+                    f"「{self.judged_aspect.value}」——没有摘要或全文时，"
+                    "只能核验文献是否存在与书目信息是否一致，不能判断内容结论是否被支持。"
+                )
+            # 反驳一个内容结论，必须能引用原文片段
+            if (
+                self.relation is EvidenceRelation.REFUTES
+                and self.judged_aspect.requires_text
+                and not (self.snippet or "").strip()
+            ):
+                raise ValueError(
+                    f"{self.evidence_id} 要反驳内容结论，但没有引用证据原文片段（snippet）——"
+                    "反驳必须能指出原文到底说了什么。"
+                )
         return self
 
     @property
@@ -564,6 +614,9 @@ class RunMetrics(VeriMindModel):
     latency_ms: int | None = Field(default=None, ge=0)
     llm_calls: int = Field(default=0, ge=0, description="真正产生费用的模型调用次数")
     cache_hits: int = Field(default=0, ge=0, description="命中本地缓存、未产生费用的调用次数")
+    retrieval_queries: int = Field(default=0, ge=0, description="本次执行的外部检索查询数")
+    retrieval_requests: int = Field(default=0, ge=0, description="实际发出的外部 HTTP 请求数")
+    retrieval_cache_hits: int = Field(default=0, ge=0, description="检索结果命中本地缓存的次数")
     prompt_tokens: int = Field(default=0, ge=0)
     completion_tokens: int = Field(default=0, ge=0)
     estimated_cost: float | None = Field(

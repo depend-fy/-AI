@@ -137,21 +137,48 @@ def render_evidence_item(evidence: Evidence) -> None:
         st.caption(f"关联关系：{evidence.relation.value}｜{evidence.relation_rationale}")
         return
 
+    aspect = evidence.judged_aspect.value if evidence.judged_aspect else "未做判断"
     st.markdown(
         badge(
             f"{evidence.source.value} · {evidence.level.value}",
             fg="#3a5a8c",
             bg="#eef3fb",
             border="#b9cbe8",
+        )
+        + badge(
+            f"判断层面：{aspect}",
+            fg="#5f6b7a",
+            bg="#f4f5f7",
+            border="#d5d9df",
+        )
+        + (
+            badge(
+                f"关系：{evidence.relation.value}",
+                fg="#b42318" if evidence.relation is EvidenceRelation.REFUTES else "#1a7f37",
+                bg="#fdecea" if evidence.relation is EvidenceRelation.REFUTES else "#e9f7ee",
+                border="#f3b3ad" if evidence.relation is EvidenceRelation.REFUTES else "#a7e0b8",
+            )
+            if evidence.relation is not EvidenceRelation.UNKNOWN
+            else ""
         ),
         unsafe_allow_html=True,
     )
+    if evidence.title:
+        year = f"（{evidence.year}）" if evidence.year else ""
+        st.markdown(f"**{evidence.title}**{year}")
+    if evidence.authors:
+        st.caption("作者：" + "、".join(evidence.authors[:5]) + ("…" if len(evidence.authors) > 5 else ""))
     if evidence.url:
-        st.link_button(f"打开来源：{evidence.display_name}", evidence.url)
+        st.link_button(f"打开来源：{evidence.url}", evidence.url)
     if evidence.snippet:
-        st.caption(f"证据片段：{evidence.snippet}")
+        label = "引用原句" if evidence.judged_aspect is JudgedAspect.CONTENT else "证据片段"
+        st.caption(f"{label}：{evidence.snippet}")
     if evidence.relation_rationale:
-        st.caption(f"关联关系：{evidence.relation.value}｜{evidence.relation_rationale}")
+        st.caption(f"判断理由：{evidence.relation_rationale}")
+    if evidence.query:
+        st.caption(f"检索式：`{evidence.query}`")
+    if evidence.raw_ref:
+        st.caption(f"原始响应留档：`data/{evidence.raw_ref}`")
 
 
 def render_search_trace(result: VerificationResult) -> None:
@@ -340,6 +367,9 @@ def render_run_info(report: DetectionReport) -> None:
             f"- 端到端耗时：{report.metrics.latency_ms} ms\n"
             f"- 大模型调用次数：{report.metrics.llm_calls}（计费）"
             f" ／ {report.metrics.cache_hits}（命中缓存，未计费）\n"
+            f"- 外部检索：{report.metrics.retrieval_queries} 个查询 ／ "
+            f"{report.metrics.retrieval_requests} 次真实请求 ／ "
+            f"{report.metrics.retrieval_cache_hits} 次命中缓存\n"
             f"- token 用量：prompt {report.metrics.prompt_tokens} / completion {report.metrics.completion_tokens}\n"
             f"- 成本：{report.metrics.estimated_cost if report.metrics.estimated_cost is not None else '—'}\n"
             f"- 成本说明：{report.metrics.cost_note}"

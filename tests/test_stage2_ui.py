@@ -33,10 +33,15 @@ CONFLICT_SAMPLE = SAMPLE_BY_ID["internal_conflict"]
 
 @pytest.fixture(autouse=True)
 def isolate_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """让界面测试写到临时目录，别污染真实的 data/verimind.db。"""
+    """让界面测试写到临时目录，别污染真实的 data/verimind.db。
+
+    同时关闭外部检索：界面测试不应该真的去打 Crossref / OpenAlex
+    （检索行为由 test_stage4_*.py 用 respx 模拟验证）。
+    """
     monkeypatch.setenv("VERIMIND_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("VERIMIND_LLM_PROVIDER", "mock")
     monkeypatch.setenv("VERIMIND_LLM_API_KEY", "")
+    monkeypatch.setenv("VERIMIND_RETRIEVE_ENABLED", "false")
 
 
 def open_page(script: str) -> AppTest:

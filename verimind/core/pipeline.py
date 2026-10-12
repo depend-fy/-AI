@@ -27,14 +27,16 @@ from dataclasses import dataclass
 from typing import Callable
 
 from verimind.claims.extractor import ExtractionResult, PRIORITY_RANK
-from verimind.claims.preprocess import analyze_text
+from verimind.claims.preprocess import DocumentAnalysis, analyze_text
 from verimind.core.config import Settings, get_settings
-from verimind.core.enums import RoleName, RunMode
+from verimind.core.enums import EvidenceLevel, EvidenceRelation, JudgedAspect, RoleName, RunMode
 from verimind.core.errors import InputError, InputTooLongError, VeriMindError
 from verimind.core.logging import get_logger
 from verimind.core.schemas import (
     Claim,
     DetectionReport,
+    Evidence,
+    EvidenceReviewReport,
     FactCheckReport,
     LlmCallLog,
     RolePosition,
@@ -43,19 +45,26 @@ from verimind.core.schemas import (
 from verimind.models.base import CallBudget, LLMClient, LlmUsage, build_client
 from verimind.models.cache import LLMCache
 from verimind.models.mock_provider import RuleBasedOfflineClient
+from verimind.retrieval.router import RetrievalOutcome, run_retrieval
 from verimind.storage.repository import RunRepository
 from verimind.verification.consistency import conflicts_by_claim, find_internal_conflicts
+from verimind.verification.matcher import (
+    apply_content_assessment,
+    assess_metadata,
+    assess_title_match,
+    snippet_in_text,
+)
 from verimind.verification.rules import (
     AdjudicationContext,
     evaluate_all,
     internal_evidence_for_conflicts,
 )
 
-PIPELINE_VERSION = "0.3.0"
+PIPELINE_VERSION = "0.4.0"
 
-#: 阶段 3 仍未实现外部检索。这里显式写死，避免"配置里开了检索"被误当成真的查过了。
-#: 阶段 4 实现检索后改成 True。
-RETRIEVAL_AVAILABLE = False
+#: 阶段 4 起，外部检索已经实装。这个开关用于让规则层知道"没查到"到底是因为没查，
+#: 还是因为查了没结果 —— 两者的结论不同（前者「暂无法核验」，后者可能是「证据不足」）。
+RETRIEVAL_AVAILABLE = True
 
 logger = get_logger("core.pipeline")
 
@@ -181,6 +190,8 @@ def _build_limitations(
     degraded_reason: str | None,
     cache_hits: int,
     fact_check_note: str | None,
+    retrieval: RetrievalOutcome,
+    retrieval_enabled: bool,
 ) -> list[str]:
     """如实列出本次检测的能力边界。这段文字会原样显示在报告里。"""
     if primary.is_simulated:
@@ -193,17 +204,35 @@ def _build_limitations(
             f"本次主张拆解由真实大模型「{primary.engine_id}」完成，输出已通过数据结构校验；"
             "同时用规则引擎做了交叉比对，分歧见「引擎交叉比对」。"
         )
-    limitations: list[str] = [
-        engine_note,
-        (
-            "本次**未接入任何外部文献检索**，因此报告不会出现「已核实」，"
-            "也不会因外部证据出现「存在矛盾」；需要外部证据的主张一律标记为「证据不足」，"
-            "这不代表内容有误（阶段 4 将接入 Crossref / OpenAlex / arXiv）。"
-        ),
-        "系统未读取任何论文的摘要或全文，因此不对「某文献是否支持该结论」作出判断。",
-        "大模型提出的「疑似问题类型」只是怀疑方向，**未经外部证据证实**，不能当作结论。",
-        "报告只给出有明确含义的状态与定性严重度，**不包含概率化的「幻觉分数」**（系统未做概率校准）。",
-    ]
+    limitations: list[str] = [engine_note]
+
+    if retrieval_enabled:
+        limitations.append(
+            f"本次对外部来源执行了 {retrieval.query_count} 个检索查询"
+            f"（{retrieval.stats.summary()}），共获得 {len(retrieval.evidence)} 条证据。"
+        )
+        limitations.append(
+            "Crossref / OpenAlex / arXiv 收录的是**学术元数据**，对中文自由文本几乎无法检索。"
+            "因此没有 DOI 的中文来源通常只能标记为「暂无法核验」——"
+            "这不是系统偷懒，而是数据源覆盖范围的客观限制；检索痕迹里可以看到具体查了什么、有没有命中。"
+        )
+        limitations.append(
+            "系统最多只读取到**摘要**，没有通读全文。摘要层面的判断不等于全文核实；"
+            "没有摘要时，系统只核验「文献是否存在」与「书目信息是否一致」，"
+            "**不会**据此判断文献是否支持原文结论。"
+        )
+    else:
+        limitations.append(
+            "本次未启用外部文献检索：因此不会出现「已核实」，也不会因外部证据出现「存在矛盾」；"
+            "需要外部证据的主张一律标记为「证据不足」，这不代表内容有误。"
+        )
+
+    limitations.append(
+        "大模型提出的「疑似问题类型」只是怀疑方向，**未经外部证据证实**，不能当作结论。"
+    )
+    limitations.append(
+        "报告只给出有明确含义的状态与定性严重度，**不包含概率化的「幻觉分数」**（系统未做概率校准）。"
+    )
 
     if degraded_reason:
         limitations.insert(
@@ -238,6 +267,135 @@ def _build_limitations(
             "属于启发式方法，可能存在漏检或误配。"
         )
     return limitations
+
+
+def _validate_content_assessments(
+    review: EvidenceReviewReport, external_by_claim: dict[str, list[Evidence]]
+) -> tuple[dict[str, Evidence], list[str]]:
+    """校验角色 B 的内容层面判断，产出"可采纳的修订"与"被拒绝的说明"。
+
+    拒绝规则（宁可停在证据不足，也不采纳无法复核的判断）：
+        · 不是内容层面的判断 → 拒绝（越界）；
+        · 判断为支持/部分支持/反驳却没有引用原句 → 拒绝；
+        · 引用的原句在证据文本里找不到 → 拒绝（模型改写或翻译过）；
+        · 与证据层级不匹配（例如没有摘要）→ 拒绝。
+    """
+    by_id = {item.evidence_id: item for items in external_by_claim.values() for item in items}
+    revisions: dict[str, Evidence] = {}
+    notes: list[str] = []
+    judged_relations = (
+        EvidenceRelation.SUPPORTS,
+        EvidenceRelation.PARTIALLY_SUPPORTS,
+        EvidenceRelation.REFUTES,
+    )
+    for assessment in review.assessments:
+        evidence = by_id.get(assessment.evidence_id)
+        if evidence is None:
+            notes.append(f"证据审查员引用了不存在的证据编号 {assessment.evidence_id}，已忽略。")
+            continue
+        if assessment.judged_aspect is not JudgedAspect.CONTENT:
+            notes.append(
+                f"{assessment.evidence_id}：证据审查员返回了非内容层面的判断，已忽略"
+                "（本任务只判断内容结论是否被支持）。"
+            )
+            continue
+        if assessment.relation in judged_relations:
+            if not (assessment.quoted_snippet or "").strip():
+                notes.append(
+                    f"{assessment.evidence_id}：证据审查员判定「{assessment.relation.value}」"
+                    "但没有引用证据原句，该判断已降级为「无法判断」。"
+                )
+                continue
+            if not snippet_in_text(assessment.quoted_snippet, evidence.snippet):
+                notes.append(
+                    f"{assessment.evidence_id}：证据审查员引用的原句在证据文本中找不到"
+                    "（可能是模型改写或翻译），该判断已丢弃。"
+                )
+                continue
+        revised = apply_content_assessment(
+            evidence,
+            relation=assessment.relation,
+            rationale=assessment.rationale,
+            quoted_snippet=assessment.quoted_snippet,
+        )
+        if revised is None:
+            notes.append(f"{assessment.evidence_id}：该判断与证据层级不匹配，已丢弃。")
+            continue
+        revisions[assessment.evidence_id] = revised
+    return revisions, notes
+
+
+def _apply_evidence_assessments(
+    review: EvidenceReviewReport, external_by_claim: dict[str, list[Evidence]]
+) -> tuple[dict[str, Evidence], list[str]]:
+    """对外暴露的入口：校验并返回可采纳的修订（由调用方写回报告与映射）。"""
+    return _validate_content_assessments(review, external_by_claim)
+
+
+def _sync_evidence(report: DetectionReport, external_by_claim: dict[str, list[Evidence]]) -> None:
+    """让报告里的外部证据与匹配后的对象保持一致（同一批实例）。"""
+    flattened = {item.evidence_id: item for items in external_by_claim.values() for item in items}
+    report.evidence = [
+        flattened[item.evidence_id] for item in report.evidence if item.evidence_id in flattened
+    ]
+
+
+def _match_external_evidence(
+    report: DetectionReport,
+    retrieval: RetrievalOutcome,
+    analysis: DocumentAnalysis,
+    cross_check: list[str],
+) -> dict[str, list[Evidence]]:
+    """把检索到的证据按主张分组，并在**元数据层面**先判断一轮。"""
+    by_id = {item.evidence_id: item for item in report.evidence}
+    result: dict[str, list[Evidence]] = {}
+    dropped = 0
+    for claim in report.claims:
+        items: list[Evidence] = []
+        for evidence_id in retrieval.evidence_ids_by_claim.get(claim.claim_id, []):
+            item = by_id.get(evidence_id)
+            if item is None:
+                continue
+            # 按标题检索命中时，先确认"查到的是不是同一篇"，
+            # 否则会把别人的年份当成原文那条引用的年份，凭空造出一个"年份错误"。
+            if not item.doi and item.title and item.query:
+                if assess_title_match(item, item.query) is None:
+                    dropped += 1
+                    continue
+            items.append(assess_metadata(claim, item, analysis))
+        result[claim.claim_id] = items
+    if dropped:
+        cross_check.append(
+            f"{dropped} 条检索结果的标题与原文所述差异过大，已丢弃（避免张冠李戴）。"
+        )
+    return result
+
+
+def _content_pairs(
+    report: DetectionReport, external_by_claim: dict[str, list[Evidence]]
+) -> list[dict]:
+    """挑出可以进入内容层面判断的「主张 ↔ 证据」对（必须有摘要/全文片段）。"""
+    pairs: list[dict] = []
+    for claim in report.claims:
+        for item in external_by_claim.get(claim.claim_id, []):
+            if item.level not in (EvidenceLevel.ABSTRACT, EvidenceLevel.FULLTEXT):
+                continue
+            if not (item.snippet or "").strip():
+                continue
+            pairs.append(
+                {
+                    "claim_id": claim.claim_id,
+                    "主张": claim.normalized_claim,
+                    "主张类型": str(claim.claim_type.value),
+                    "原文片段": claim.source_span.text,
+                    "evidence_id": item.evidence_id,
+                    "来源": str(item.source.value),
+                    "标题": item.title,
+                    "年份": item.year,
+                    "摘要": (item.snippet or "")[:1500],
+                }
+            )
+    return pairs
 
 
 def _apply_assessments(
@@ -439,36 +597,89 @@ def run_detection(
     report.run_mode = run_mode
 
     # ---------------- ④ 文内一致性检查 ----------------
-    _notify(progress, "④ 文内一致性检查", 0.45)
+    _notify(progress, "④ 文内一致性检查", 0.42)
     analysis = analyze_text(raw)
     conflicts = find_internal_conflicts(raw, report.claims, analysis=analysis)
-    evidence, evidence_ids_by_claim = internal_evidence_for_conflicts(conflicts)
-    report.evidence = evidence
     _notify(
         progress,
         "④ 文内一致性检查",
-        0.55,
+        0.48,
         f"发现 {len(conflicts)} 处文内矛盾" if conflicts else "未发现文内自相矛盾",
     )
 
-    # ---------------- ⑤ 规则裁决 ----------------
-    _notify(progress, "⑤ 规则裁决", 0.60)
+    # ---------------- ⑤ 外部证据检索 ----------------
+    _notify(progress, "⑤ 外部证据检索", 0.52)
+    retrieval = run_retrieval(report.claims, analysis, settings, run_id=run_id, start_index=0)
+    report.evidence = list(retrieval.evidence)
+    _notify(
+        progress,
+        "⑤ 外部证据检索",
+        0.62,
+        f"执行 {retrieval.query_count} 个查询，得到 {len(retrieval.evidence)} 条证据"
+        f"（{retrieval.stats.summary()}）",
+    )
+    cross_check.extend(retrieval.notes)
+
+    # ---------------- ⑥ 元数据层面的证据匹配 ----------------
+    _notify(progress, "⑥ 证据与主张匹配", 0.66)
+    external_by_claim = _match_external_evidence(report, retrieval, analysis, cross_check)
+    # 匹配会产生"带判断的新证据对象"，必须让报告里也换成同一批对象，
+    # 否则会出现"裁决用的是新对象、报告显示的是旧对象"这种诡异的错位。
+    _sync_evidence(report, external_by_claim)
+    matched_claims = sum(1 for items in external_by_claim.values() if items)
+    _notify(
+        progress,
+        "⑥ 证据与主张匹配",
+        0.70,
+        f"{matched_claims} 条主张获得可用证据（元数据层面）",
+    )
+
+    # ---------------- ⑦ 证据审查员（角色 B）：内容层面 ----------------
+    if not primary.is_simulated:
+        pairs = _content_pairs(report, external_by_claim)
+        if pairs:
+            _notify(progress, "⑦ 证据审查员（角色 B）", 0.74, f"审查 {len(pairs)} 对「主张↔证据」")
+            try:
+                review, review_usage = primary.assess_evidence(pairs)
+                usages.append(review_usage)
+            except VeriMindError as exc:
+                cross_check.append(f"证据审查员（角色 B）未能完成，原因：{exc}")
+            else:
+                revisions, notes = _apply_evidence_assessments(review, external_by_claim)
+                cross_check.extend(notes)
+                if revisions:
+                    external_by_claim = {
+                        claim_id: [revisions.get(item.evidence_id, item) for item in items]
+                        for claim_id, items in external_by_claim.items()
+                    }
+                    _sync_evidence(report, external_by_claim)
+
+    # ---------------- ⑧ 内部矛盾证据（编号接在外部证据之后） ----------------
+    internal_evidence, evidence_ids_by_claim = internal_evidence_for_conflicts(
+        conflicts, start_index=len(report.evidence)
+    )
+    report.evidence.extend(internal_evidence)
+
+    # ---------------- ⑨ 规则裁决 ----------------
+    _notify(progress, "⑨ 规则裁决", 0.80)
     context = AdjudicationContext(
         text=raw,
         analysis=analysis,
         conflicts_by_claim=conflicts_by_claim(conflicts),
         evidence_ids_by_claim=evidence_ids_by_claim,
+        external_evidence_by_claim=external_by_claim,
+        traces=retrieval.traces,
         retrieval_enabled=RETRIEVAL_AVAILABLE and settings.retrieve_enabled,
-        pipeline_stage="阶段 3",
+        pipeline_stage="阶段 4",
     )
     report.verification_results = evaluate_all(report.claims, context)
     _notify(
-        progress, "⑤ 规则裁决", 0.72, f"完成 {len(report.verification_results)} 条主张的裁决"
+        progress, "⑨ 规则裁决", 0.86, f"完成 {len(report.verification_results)} 条主张的裁决"
     )
 
-    # ---------------- ⑥ 事实审查员（角色 A） ----------------
+    # ---------------- ⑩ 事实审查员（角色 A） ----------------
     if not primary.is_simulated and report.claims:
-        _notify(progress, "⑥ 事实审查员复核", 0.78, f"调用 {primary.engine_id}")
+        _notify(progress, "⑩ 事实审查员复核", 0.90, f"调用 {primary.engine_id}")
         try:
             assessment_report, check_usage = primary.assess_claims(raw, report.claims)
             usages.append(check_usage)
@@ -477,15 +688,15 @@ def run_detection(
             logger.warning(fact_check_note)
         else:
             cross_check.extend(_apply_assessments(report, assessment_report, primary))
-            _notify(progress, "⑥ 事实审查员复核", 0.88, "角色结论已写入报告")
+            _notify(progress, "⑩ 事实审查员复核", 0.93, "角色结论已写入报告")
     elif primary.is_simulated:
         cross_check.append(
             "当前为离线规则引擎模式：没有大模型角色参与，因此报告中不存在"
             "「不同模型之间的分歧」——也不会假装存在。"
         )
 
-    # ---------------- ⑦ 生成报告 ----------------
-    _notify(progress, "⑦ 生成报告", 0.92)
+    # ---------------- ⑪ 生成报告 ----------------
+    _notify(progress, "⑪ 生成报告", 0.95)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     prompt_tokens = sum(usage.prompt_tokens or 0 for usage in usages)
     completion_tokens = sum(usage.completion_tokens or 0 for usage in usages)
@@ -516,6 +727,9 @@ def run_detection(
         latency_ms=elapsed_ms,
         llm_calls=sum(1 for usage in usages if not usage.cache_hit),
         cache_hits=cache_hits,
+        retrieval_queries=retrieval.query_count,
+        retrieval_requests=retrieval.stats.requests,
+        retrieval_cache_hits=retrieval.stats.cache_hits,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
         estimated_cost=estimated_cost,
@@ -530,6 +744,8 @@ def run_detection(
         degraded_reason=degraded_reason,
         cache_hits=cache_hits,
         fact_check_note=fact_check_note,
+        retrieval=retrieval,
+        retrieval_enabled=RETRIEVAL_AVAILABLE and settings.retrieve_enabled,
     ) + report.limitations
     report.llm_config_summary = _config_summary(
         primary=primary,

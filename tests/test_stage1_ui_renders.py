@@ -25,6 +25,13 @@ PAGE_SCRIPTS = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def isolate_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """界面渲染测试不该依赖开发机上的本地数据，也不该真的去检索外部来源。"""
+    monkeypatch.setenv("VERIMIND_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("VERIMIND_RETRIEVE_ENABLED", "false")
+
+
 @pytest.mark.parametrize("script", PAGE_SCRIPTS)
 def test_page_renders_without_exception(script: str) -> None:
     app = AppTest.from_file(str(PROJECT_ROOT / script), default_timeout=120)

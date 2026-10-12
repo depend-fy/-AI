@@ -31,6 +31,8 @@ from verimind.core.enums import (
     EvidenceLevel,
     EvidenceRelation,
     EvidenceSource,
+    JudgedAspect,
+    MatchBasis,
     ProblemType,
     ReviewCheckType,
     ReviewOverall,
@@ -155,10 +157,50 @@ def test_evidence_url_must_be_clickable() -> None:
         make_evidence(url="not-a-real-url")
 
 
-def test_metadata_only_evidence_cannot_judge_relation() -> None:
-    """只有元数据，就不能说"这篇论文支持了该结论"——那是在假装读过全文。"""
+def test_metadata_only_evidence_cannot_judge_content() -> None:
+    """只有元数据，就不能说"这篇论文支持/反驳了该结论"——那是在假装读过全文。
+
+    阶段 4 起这条约束改得更精确了：元数据**可以**用来判断
+    「文献是否存在」「书目信息是否一致」，但**不能**判断「内容结论是否被支持」。
+    """
     with pytest.raises(ValidationError):
-        make_evidence(relation=EvidenceRelation.SUPPORTS, relation_rationale="标题看起来一致")
+        make_evidence(
+            relation=EvidenceRelation.SUPPORTS,
+            relation_rationale="标题看起来一致",
+            judged_aspect=JudgedAspect.CONTENT,
+        )
+
+
+def test_metadata_only_evidence_may_judge_existence() -> None:
+    """反过来：注册机构的元数据足以判断"文献是否存在"，这是允许且有价值的。"""
+    evidence = make_evidence(
+        relation=EvidenceRelation.REFUTES,
+        relation_rationale="Crossref 明确返回 404：该 DOI 未注册。",
+        judged_aspect=JudgedAspect.EXISTENCE,
+    )
+    assert evidence.judged_aspect is JudgedAspect.EXISTENCE
+
+
+def test_judgement_requires_stating_the_aspect() -> None:
+    """给出了支持/反驳关系，就必须说明判断的是哪个层面。"""
+    with pytest.raises(ValidationError):
+        make_evidence(
+            level=EvidenceLevel.ABSTRACT,
+            relation=EvidenceRelation.SUPPORTS,
+            relation_rationale="摘要里提到了这一点",
+        )
+
+
+def test_content_judgement_requires_quoting_the_evidence() -> None:
+    """判断内容层面必须能引用原句（否则无法复核）。"""
+    with pytest.raises(ValidationError):
+        make_evidence(
+            level=EvidenceLevel.ABSTRACT,
+            relation=EvidenceRelation.REFUTES,
+            relation_rationale="摘要与主张相反",
+            judged_aspect=JudgedAspect.CONTENT,
+            snippet=None,
+        )
 
 
 def test_supporting_evidence_requires_rationale() -> None:
@@ -167,17 +209,7 @@ def test_supporting_evidence_requires_rationale() -> None:
             level=EvidenceLevel.ABSTRACT,
             relation=EvidenceRelation.SUPPORTS,
             relation_rationale="",
-        )
-
-
-def test_refuting_evidence_requires_quoted_snippet() -> None:
-    """反驳必须能指出原文到底说了什么。"""
-    with pytest.raises(ValidationError):
-        make_evidence(
-            level=EvidenceLevel.ABSTRACT,
-            relation=EvidenceRelation.REFUTES,
-            relation_rationale="摘要结论与主张相反",
-            snippet=None,
+            judged_aspect=JudgedAspect.CONTENT,
         )
 
 
@@ -186,9 +218,54 @@ def test_abstract_evidence_may_support_with_rationale_and_snippet() -> None:
         level=EvidenceLevel.ABSTRACT,
         relation=EvidenceRelation.SUPPORTS,
         relation_rationale="摘要明确给出该结论。",
+        judged_aspect=JudgedAspect.CONTENT,
         snippet="Our results show ...",
     )
     assert ev.relation is EvidenceRelation.SUPPORTS
+
+
+def test_evidence_url_must_be_clickable() -> None:
+    with pytest.raises(ValidationError):
+        make_evidence(url="not-a-real-url")
+
+
+def test_internal_evidence_needs_a_span_instead_of_url() -> None:
+    """原文内部证据不许有 URL，但必须有原文定位与片段。"""
+    internal = Evidence(
+        evidence_id="E010",
+        source=EvidenceSource.INTERNAL,
+        level=EvidenceLevel.USER_TEXT,
+        url=None,
+        source_span=Span.from_text(INPUT_TEXT, 0, 3),
+        snippet=INPUT_TEXT[0:3],
+        relation=EvidenceRelation.REFUTES,
+        relation_rationale="原文前后矛盾",
+        match_basis=MatchBasis.INTERNAL,
+        judged_aspect=JudgedAspect.INTERNAL_CONSISTENCY,
+    )
+    assert internal.is_internal is True
+
+    with pytest.raises(ValidationError):
+        Evidence(
+            evidence_id="E011",
+            source=EvidenceSource.INTERNAL,
+            level=EvidenceLevel.USER_TEXT,
+            source_span=None,
+            snippet="x",
+            relation=EvidenceRelation.REFUTES,
+            relation_rationale="缺定位",
+            judged_aspect=JudgedAspect.INTERNAL_CONSISTENCY,
+        )
+
+
+def test_external_evidence_requires_a_url() -> None:
+    with pytest.raises(ValidationError):
+        Evidence(
+            evidence_id="E012",
+            source=EvidenceSource.CROSSREF,
+            level=EvidenceLevel.METADATA_ONLY,
+            url=None,
+        )
 
 
 # ==========================================================================

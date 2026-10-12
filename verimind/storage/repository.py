@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
+from pydantic import ValidationError
+
 from verimind.core.enums import LlmCallStatus, RoleName
 from verimind.core.errors import StorageError
 from verimind.core.schemas import DetectionReport, LlmCallLog
@@ -148,7 +150,11 @@ class RunRepository:
             )
 
     def get(self, run_id: str) -> DetectionReport | None:
-        """按 ID 读取报告；不存在时返回 None（不抛异常，方便界面处理）。"""
+        """按 ID 读取报告；不存在时返回 None。
+
+        如果这条记录是**旧版本**（数据结构已经变化）保存的，会抛 `StorageError` 而不是
+        让 pydantic 的校验错误直接冒到界面上——历史数据不该把页面搞崩。
+        """
         if not run_id:
             return None
         with self._connect() as connection:
@@ -157,7 +163,15 @@ class RunRepository:
             ).fetchone()
         if row is None:
             return None
-        return DetectionReport.from_json(row["report_json"])
+        try:
+            return DetectionReport.from_json(row["report_json"])
+        except ValidationError as exc:
+            raise StorageError(
+                f"这条历史记录（{run_id[:8]}…）是用旧版本的数据结构保存的，"
+                "与当前版本不兼容。可以重新检测一次生成新报告；"
+                "如需清理历史：删除 data/verimind.db 即可（该文件不在 Git 里）。"
+                f"（校验失败原因：{str(exc).splitlines()[0][:120]}）"
+            ) from exc
 
     def list_recent(self, limit: int = 20) -> list[RunSummary]:
         """最近若干次运行的摘要（按时间倒序）。"""

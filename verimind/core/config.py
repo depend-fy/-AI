@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     retrieval_timeout_seconds: int = Field(default=20, ge=3, le=120)
     retrieval_min_interval_seconds: float = Field(default=1.0, ge=0.0, le=10.0)
     retrieval_cache_hours: int = Field(default=24, ge=0, le=24 * 30)
+    retrieval_max_queries_per_run: int = Field(default=12, ge=1, le=100)
+    retrieval_max_retries: int = Field(default=1, ge=0, le=3)
 
     # ---------------- 输入与流程限制 ----------------
     max_input_chars: int = Field(default=3000, ge=100, le=20000)

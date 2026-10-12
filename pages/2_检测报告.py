@@ -63,11 +63,17 @@ if choice == _CURRENT:
     report = session_report
     if report is None and summaries and repository is not None:
         st.info("本次会话还没有新的检测，已自动显示最近一次历史记录。")
-        report = repository.get(summaries[0].run_id)
+        try:
+            report = repository.get(summaries[0].run_id)
+        except VeriMindError as exc:
+            st.warning(str(exc))
 else:
     position = options.index(choice) - 1
     if repository is not None and 0 <= position < len(summaries):
-        report = repository.get(summaries[position].run_id)
+        try:
+            report = repository.get(summaries[position].run_id)
+        except VeriMindError as exc:
+            st.warning(str(exc))
 
 if report is None:
     st.info(

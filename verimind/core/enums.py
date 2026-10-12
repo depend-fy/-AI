@@ -170,6 +170,28 @@ class MatchBasis(_ZhEnum):
     NONE = "未匹配"
 
 
+class JudgedAspect(_ZhEnum):
+    """一条证据被用来判断的是"哪个层面"。
+
+    这是本项目防止**越界判断**的关键设计：
+        · 只有元数据（DOI 记录、标题、年份）时，只能判断文献是否存在、书目信息是否一致；
+          绝不能据此声称"这篇论文支持/反驳了某个结论"。
+        · 要判断内容结论是否被支持，必须有摘要或全文。
+
+    换句话说：『文献是真的』和『文献真的这么说』是两个问题，必须分开回答。
+    """
+
+    EXISTENCE = "文献是否存在"
+    BIBLIOGRAPHIC = "书目信息（年份/作者/期刊）"
+    CONTENT = "内容结论是否被支持"
+    INTERNAL_CONSISTENCY = "原文内部一致性"
+
+    @property
+    def requires_text(self) -> bool:
+        """该层面是否必须有摘要/全文才能判断。"""
+        return self is JudgedAspect.CONTENT
+
+
 class Severity(_ZhEnum):
     NONE = "无"
     LOW = "低"

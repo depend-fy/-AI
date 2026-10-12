@@ -28,13 +28,16 @@ from verimind.core.errors import LLMBudgetExceeded, LLMError
 from verimind.core.schemas import (
     Claim,
     ClaimExtraction,
+    EvidenceReviewReport,
     FactCheckReport,
     LlmCallLog,
     Span,
 )
 from verimind.models.prompts import (
+    EVIDENCE_CHECKER_SYSTEM_PROMPT,
     EXTRACTION_SYSTEM_PROMPT,
     FACT_CHECKER_SYSTEM_PROMPT,
+    build_evidence_review_prompt,
     build_extraction_prompt,
     build_fact_check_prompt,
 )
@@ -178,6 +181,24 @@ class LLMClient(ABC):
             schema=FactCheckReport,
             system=FACT_CHECKER_SYSTEM_PROMPT,
             context={"text": text, "claims": [claim.model_dump(mode="json") for claim in claims]},
+        )
+
+    def assess_evidence(
+        self, pairs: list[dict]
+    ) -> tuple[EvidenceReviewReport, LlmUsage]:
+        """证据审查员（角色 B）：判断证据在**内容层面**与主张的关系。
+
+        只把"有摘要的证据"送进来（见 `matcher.content_pairs`）——
+        没有摘要时根本不做内容层面的判断，这是本项目的硬规则。
+        离线规则引擎不支持这个角色，会抛 LLMUnsupportedRoleError（不会编结果）。
+        """
+        prompt = build_evidence_review_prompt(pairs)
+        return self.complete_structured(
+            role=RoleName.EVIDENCE_CHECKER,
+            prompt=prompt,
+            schema=EvidenceReviewReport,
+            system=EVIDENCE_CHECKER_SYSTEM_PROMPT,
+            context={"pairs": pairs},
         )
 
     def health(self) -> tuple[bool, str]:

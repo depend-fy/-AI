@@ -79,13 +79,30 @@ def print_report(report: DetectionReport) -> None:
         print(f"  理由：    {result.rationale}")
         if result.problem_types:
             print("  问题类型：" + "、".join(p.value for p in result.problem_types))
-        if result.refuting_evidence_ids:
+        evidence_ids = list(
+            dict.fromkeys(
+                result.supporting_evidence_ids
+                + result.refuting_evidence_ids
+                + result.related_evidence_ids
+            )
+        )
+        if evidence_ids:
             print("  相关证据：")
-            for evidence_id in result.refuting_evidence_ids:
+            for evidence_id in evidence_ids:
                 evidence = report.evidence_by_id(evidence_id)
-                if evidence:
-                    print(f"    - [{evidence.evidence_id}] {evidence.source.value}"
-                          f"／{evidence.level.value}：{evidence.snippet}")
+                if evidence is None:
+                    continue
+                aspect = evidence.judged_aspect.value if evidence.judged_aspect else "未做判断"
+                print(
+                    f"    - [{evidence.evidence_id}] {evidence.source.value}／{evidence.level.value}"
+                    f"／{aspect}／{evidence.relation.value}"
+                )
+                if evidence.title:
+                    print(f"      标题：{evidence.title}（{evidence.year or '年份未知'}）")
+                if evidence.url:
+                    print(f"      链接：{evidence.url}")
+                if evidence.relation_rationale:
+                    print(f"      说明：{evidence.relation_rationale}")
         if result.missing_evidence:
             print("  还缺什么：" + " ".join(result.missing_evidence))
         if result.role_positions:
@@ -115,6 +132,11 @@ def print_report(report: DetectionReport) -> None:
         f"耗时：{report.metrics.latency_ms} ms    "
         f"大模型调用：{report.metrics.llm_calls} 次计费"
         f" / {report.metrics.cache_hits} 次命中缓存"
+    )
+    print(
+        f"外部检索：{report.metrics.retrieval_queries} 个查询"
+        f" / {report.metrics.retrieval_requests} 次真实请求"
+        f" / {report.metrics.retrieval_cache_hits} 次命中缓存"
     )
     print(f"成本说明：{report.metrics.cost_note}")
     print(line)

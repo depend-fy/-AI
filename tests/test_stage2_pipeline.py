@@ -49,6 +49,8 @@ def make_settings(tmp_path: Path, **overrides: object) -> Settings:
         "save_runs": False,
         "llm_provider": "mock",
         "llm_api_key": "",
+        # 这些测试校验的是"没有外部检索时"的行为；检索相关行为见 test_stage4_*.py
+        "retrieve_enabled": False,
     }
     data.update(overrides)
     return Settings(**data)  # type: ignore[arg-type]
