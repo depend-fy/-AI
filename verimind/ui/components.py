@@ -19,6 +19,7 @@ import streamlit as st
 
 from verimind.core.enums import (
     STATUS_DISPLAY_ORDER,
+    ReviewOverall,
     Severity,
     VerificationStatus,
 )
@@ -308,6 +309,118 @@ def render_claim_card(
 # ==========================================================================
 # 报告头部 / 运行信息 / 局限
 # ==========================================================================
+def render_correction_section(report: DetectionReport) -> None:
+    """修正建议与独立复核：修正前后对比 + 五项检查 + 被拒绝的修改。"""
+    st.markdown("#### ✏️ 修正建议与独立复核")
+    if not report.corrections:
+        st.caption(
+            "本次没有生成修正建议——修正只针对**已被判定有问题**的主张；"
+            "「证据不足」与「暂无法核验」都不会触发改写（那会把「还没查清」变成「擅自改写」）。"
+        )
+        return
+
+    applied = set(report.applied_correction_ids)
+    rejected = set(report.rejected_correction_ids)
+    st.markdown(
+        badge(f"共 {len(report.corrections)} 条", fg="#3a5a8c", bg="#eef3fb", border="#b9cbe8")
+        + badge(f"已采用 {len(applied)} 条", fg="#1a7f37", bg="#e9f7ee", border="#a7e0b8")
+        + badge(f"被拒绝 {len(rejected)} 条", fg="#b42318", bg="#fdecea", border="#f3b3ad"),
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "只有**独立复核通过**的修正才会被采用；复核没通过、或者根本没复核成功的，一律不写进正文。"
+    )
+
+    if report.corrected_text is not None:
+        st.markdown("**修正后全文**（仅包含已采用的修改）")
+        render_text_panel(report.corrected_text)
+
+    for correction in report.corrections:
+        accepted = correction.correction_id in applied
+        icon = "✅" if accepted else "❌"
+        with st.expander(
+            f"{icon} {correction.correction_id} ｜ {correction.change_type.value} ｜ "
+            f"{correction.original_span.text[:28]}"
+            + ("" if accepted else "（未采用）"),
+            expanded=not accepted,
+        ):
+            st.markdown(
+                badge(
+                    "已采用" if accepted else "未采用",
+                    fg="#1a7f37" if accepted else "#b42318",
+                    bg="#e9f7ee" if accepted else "#fdecea",
+                    border="#a7e0b8" if accepted else "#f3b3ad",
+                )
+                + badge(
+                    f"类型：{correction.change_type.value}",
+                    fg="#3a5a8c",
+                    bg="#eef3fb",
+                    border="#b9cbe8",
+                ),
+                unsafe_allow_html=True,
+            )
+            st.markdown(f"**原文片段**：{correction.original_span.text}")
+            st.markdown(
+                f"**修改为**：{correction.proposed_text if correction.proposed_text else '（删除该片段）'}"
+            )
+            st.markdown(f"**修改理由**：{correction.rationale}")
+            if correction.risk_note:
+                st.caption(f"该修改自身的风险：{correction.risk_note}")
+            if correction.evidence_ids:
+                st.markdown("**支撑证据**")
+                for evidence_id in correction.evidence_ids:
+                    evidence = report.evidence_by_id(evidence_id)
+                    if evidence is not None:
+                        st.markdown(f"`{evidence.evidence_id}`")
+                        render_evidence_item(evidence)
+            else:
+                st.caption("未引用证据（该修改不改写事实内容）。")
+
+            review = next(
+                (
+                    item
+                    for item in report.review_results
+                    if item.target_correction_id == correction.correction_id
+                ),
+                None,
+            )
+            if review is None:
+                st.warning("该修正没有复核记录（因此不会被采用）。")
+                continue
+            overall_color = {
+                ReviewOverall.PASSED: ("#1a7f37", "#e9f7ee", "#a7e0b8"),
+                ReviewOverall.PASSED_WITH_RISKS: ("#a15c07", "#fff6e5", "#f2d08a"),
+                ReviewOverall.FAILED: ("#b42318", "#fdecea", "#f3b3ad"),
+            }[review.overall]
+            st.markdown(
+                badge(
+                    f"复核结论：{review.overall.value}",
+                    fg=overall_color[0],
+                    bg=overall_color[1],
+                    border=overall_color[2],
+                )
+                + (
+                    badge(
+                        f"复核者：{review.reviewer.provider}/{review.reviewer.model}",
+                        fg="#5f6b7a",
+                        bg="#f4f5f7",
+                        border="#d5d9df",
+                    )
+                    if review.reviewer
+                    else ""
+                ),
+                unsafe_allow_html=True,
+            )
+            st.markdown("**五项检查**")
+            for check in review.checks:
+                mark = "✅" if check.passed else "❌"
+                st.markdown(f"- {mark} {check.check.value}：{check.detail}")
+            if review.unresolved:
+                st.markdown("**仍未解决 / 需要人工确认**")
+                for item in review.unresolved:
+                    st.markdown(f"- {item}")
+
+
 def render_report_header(report: DetectionReport) -> None:
     local_time = report.created_at.astimezone().strftime("%Y-%m-%d %H:%M:%S")
     st.markdown(

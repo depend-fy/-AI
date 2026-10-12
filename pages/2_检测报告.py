@@ -142,6 +142,12 @@ if unverified:
 else:
     st.caption("没有待核验的主张。")
 
+# ---------------------------------------------------------------- 修正与复核
+st.divider()
+from verimind.ui.components import render_correction_section  # noqa: E402
+
+render_correction_section(report)
+
 # ---------------------------------------------------------------- 交叉比对
 st.divider()
 from verimind.ui.components import render_cross_check  # noqa: E402

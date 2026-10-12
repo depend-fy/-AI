@@ -90,15 +90,15 @@ _CORE_ASPECT: dict[ClaimType, JudgedAspect] = {
 
 #: 不同类型的主张"还缺什么证据才能判断"——这是对用户最有用的信息之一
 _MISSING_EVIDENCE_BY_TYPE: dict[ClaimType, str] = {
-    ClaimType.DOI_VALIDITY: "需要通过 Crossref 查询该 DOI 的注册信息，并核对其标题、作者、年份是否与原文一致（阶段 4 实现）。",
-    ClaimType.WORK_EXISTENCE: "需要通过标题 / 作者 / 期刊在 Crossref 或 OpenAlex 中检索该文献是否存在（阶段 4 实现）。",
-    ClaimType.METADATA_YEAR: "需要核对文献的实际发表年份（Crossref / OpenAlex 元数据，阶段 4 实现）。",
-    ClaimType.METADATA_AUTHOR: "需要核对文献的作者列表（Crossref / OpenAlex 元数据，阶段 4 实现）。",
-    ClaimType.METADATA_VENUE: "需要核对文献发表的期刊或会议名称（Crossref / OpenAlex 元数据，阶段 4 实现）。",
-    ClaimType.QUANTITATIVE: "需要找到该数值的原始出处，并核对数值本身与研究结论（阶段 4/5 实现）。",
-    ClaimType.CAUSAL: "需要阅读该来源的摘要或全文，确认其是否真的支持这一结论（阶段 4/5 实现）。",
-    ClaimType.ATTRIBUTION: "需要核实该机构是否确实发布过相关内容（阶段 4 实现）。",
-    ClaimType.GENERAL_FACT: "需要检索权威公开来源进行核对（阶段 4 实现）。",
+    ClaimType.DOI_VALIDITY: "需要通过 Crossref 查询该 DOI 的注册信息，并核对其标题、作者、年份是否与原文一致。",
+    ClaimType.WORK_EXISTENCE: "需要通过标题 / 作者 / 期刊在 Crossref 或 OpenAlex 中检索该文献是否存在。",
+    ClaimType.METADATA_YEAR: "需要核对文献的实际发表年份（Crossref / OpenAlex 元数据）。",
+    ClaimType.METADATA_AUTHOR: "需要核对文献的作者列表（Crossref / OpenAlex 元数据）。",
+    ClaimType.METADATA_VENUE: "需要核对文献发表的期刊或会议名称（Crossref / OpenAlex 元数据）。",
+    ClaimType.QUANTITATIVE: "需要找到该数值的原始出处（摘要或全文），并核对数值本身。",
+    ClaimType.CAUSAL: "需要阅读该来源的摘要或全文，确认其是否真的支持这一结论。",
+    ClaimType.ATTRIBUTION: "需要核实该机构是否确实发布过相关内容（目前没有覆盖机构网站的公开检索源）。",
+    ClaimType.GENERAL_FACT: "需要权威公开来源才能核对（目前只接入了学术文献源，非学术事实无法核验）。",
     ClaimType.OPINION: "观点与预测无法用外部证据核验，因此不作判断。",
 }
 

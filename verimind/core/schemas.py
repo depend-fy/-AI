@@ -312,6 +312,65 @@ class EvidenceReviewReport(VeriMindModel):
 
 
 # ==========================================================================
+# 一之五、修正与复核的中间产物
+# ==========================================================================
+class CorrectionDraft(VeriMindModel):
+    """修正员（角色 C）对**一条主张**给出的修正草稿。
+
+    关键设计：
+        · `target_quote` 必须是原文中**一字不差**的片段（用于精确定位要改哪几个字），
+          它还必须落在该主张所属句子内——不允许模型顺手改写别的地方；
+        · `evidence_ids` 只能从给它的证据里挑；改事实类修改必须挑，
+          否则规则层会退回"只能弱化或删除"；
+        · 模型**不负责证明自己改得对**，那是复核员（角色 D）的事。
+    """
+
+    claim_id: str
+    target_quote: str = Field(min_length=1, description="要被替换的原文片段（必须与原文一致）")
+    proposed_text: str = Field(
+        default="", description="替换后的文本；删除类修改允许为空"
+    )
+    change_type: ChangeType
+    rationale: str = Field(min_length=1, description="为什么这么改")
+    evidence_ids: list[str] = Field(default_factory=list, description="支撑本次修改的证据编号")
+    risk_note: str | None = Field(default=None, description="该修改自身可能的风险")
+
+    @model_validator(mode="after")
+    def _check_proposed_text(self) -> "CorrectionDraft":
+        if self.change_type is not ChangeType.DELETE and not self.proposed_text.strip():
+            raise ValueError("非删除类修正必须给出修改后的文本")
+        return self
+
+
+class CorrectionBatch(VeriMindModel):
+    corrections: list[CorrectionDraft] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+class ReviewDraft(VeriMindModel):
+    """独立复核员（角色 D）对**一条修正**的语义层面结论。
+
+    这里只让模型回答两个它擅长、且无法用规则替代的问题：
+        ① 原始问题是否真的被解决了；
+        ② 修正有没有引入新的过度推断。
+    其余三项检查（是否有证据支持、是否引入新事实错误、证据与修正后表述是否匹配）
+    由**确定性规则**完成——那三件事用代码判定比用模型更可靠，也更便宜。
+    """
+
+    target_correction_id: str
+    issue_resolved: bool
+    issue_resolved_detail: str = Field(min_length=1)
+    no_new_overreach: bool
+    no_new_overreach_detail: str = Field(min_length=1)
+    unresolved: list[str] = Field(default_factory=list)
+
+
+class ReviewBatch(VeriMindModel):
+    reviews: list[ReviewDraft] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+# ==========================================================================
 # 二、外部证据
 # ==========================================================================
 class Evidence(VeriMindModel):
@@ -511,7 +570,9 @@ class Correction(VeriMindModel):
     correction_id: str = Field(pattern=r"^K\d{3,}$")
     claim_id: str
     original_span: Span = Field(description="被修改的原文片段")
-    proposed_text: str = Field(min_length=1, description="建议修改后的文本")
+    proposed_text: str = Field(
+        default="", description="建议修改后的文本；删除类修改允许为空"
+    )
     change_type: ChangeType
     rationale: str = Field(min_length=1, description="为什么要这样改")
     evidence_ids: list[str] = Field(default_factory=list, description="支撑本次修改的证据")
@@ -519,6 +580,8 @@ class Correction(VeriMindModel):
 
     @model_validator(mode="after")
     def _require_evidence_for_fact_change(self) -> "Correction":
+        if self.change_type is not ChangeType.DELETE and not self.proposed_text.strip():
+            raise ValueError(f"{self.correction_id} 非删除类修正必须给出修改后的文本。")
         if self.change_type in FACT_CHANGING_TYPES and not self.evidence_ids:
             raise ValueError(
                 f"{self.correction_id} 属于「{self.change_type.value}」——"
@@ -649,6 +712,14 @@ class DetectionReport(VeriMindModel):
     verification_results: list[VerificationResult] = Field(default_factory=list)
     corrections: list[Correction] = Field(default_factory=list)
     review_results: list[ReviewResult] = Field(default_factory=list)
+    #: 只应用"复核通过"的修正后得到的全文（没通过的一条都不改，避免把错误改进去）
+    corrected_text: str | None = Field(
+        default=None, description="把复核通过的修正应用到原文后得到的文本"
+    )
+    applied_correction_ids: list[str] = Field(default_factory=list)
+    rejected_correction_ids: list[str] = Field(
+        default_factory=list, description="复核未通过或无法安全应用的修正"
+    )
 
     stats: ReportStats = Field(default_factory=ReportStats)
     metrics: RunMetrics = Field(default_factory=RunMetrics)
@@ -708,6 +779,12 @@ class DetectionReport(VeriMindModel):
         for cid in self.unresolved_claim_ids:
             if cid not in known_claims:
                 problems.append(f"未解决问题列表里有不存在的主张 {cid}")
+
+        for cid in self.applied_correction_ids + self.rejected_correction_ids:
+            if cid not in set(correction_ids):
+                problems.append(f"修正应用记录里引用了不存在的修正 {cid}")
+        if len(self.applied_correction_ids) != len(set(self.applied_correction_ids)):
+            problems.append("applied_correction_ids 存在重复")
 
         if problems:
             raise ValueError("报告引用完整性校验失败：" + "；".join(problems))

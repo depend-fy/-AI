@@ -373,6 +373,8 @@ def pipeline_settings(tmp_path: Path, **overrides) -> Settings:
         "llm_model": "deepseek-chat",
         "llm_api_key": "sk-" + "x" * 20,
         "llm_cache_enabled": False,
+        # 本文件测的是模型客户端；外部检索由 test_stage4_*.py 负责
+        "retrieve_enabled": False,
     }
     data.update(overrides)
     return Settings(**data)  # type: ignore[arg-type]

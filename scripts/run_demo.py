@@ -115,6 +115,41 @@ def print_report(report: DetectionReport) -> None:
                 if position.reasoning:
                     print(f"      依据：{position.reasoning}")
 
+    if report.corrections:
+        print("\n" + line)
+        print(f"修正建议（共 {len(report.corrections)} 条）：")
+        applied = set(report.applied_correction_ids)
+        for correction in report.corrections:
+            flag = "已采用" if correction.correction_id in applied else "未采用"
+            print(f"  [{correction.correction_id}] {flag}｜{correction.change_type.value}")
+            print(f"      原文：{correction.original_span.text}")
+            print(f"      改为：{correction.proposed_text or '（删除）'}")
+            print(f"      理由：{correction.rationale}")
+            if correction.evidence_ids:
+                print(f"      证据：{'、'.join(correction.evidence_ids)}")
+            review = next(
+                (
+                    item
+                    for item in report.review_results
+                    if item.target_correction_id == correction.correction_id
+                ),
+                None,
+            )
+            if review is None:
+                print("      复核：无记录（不采用）")
+                continue
+            print(f"      复核：{review.overall.value}")
+            for check in review.checks:
+                mark = "OK  " if check.passed else "FAIL"
+                print(f"        [{mark}] {check.check.value}：{check.detail}")
+            for item in review.unresolved:
+                print(f"        未解决：{item}")
+        if report.corrected_text is not None:
+            print("\n修正后全文（只包含已采用的修改）：")
+            print(f"  {report.corrected_text}")
+        if report.rejected_correction_ids:
+            print(f"被拒绝的修正：{'、'.join(report.rejected_correction_ids)}")
+
     if report.cross_check_notes:
         print("\n" + line)
         print("引擎交叉比对（规则引擎 vs 大模型）：")

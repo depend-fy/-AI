@@ -28,18 +28,24 @@ from verimind.core.errors import LLMBudgetExceeded, LLMError
 from verimind.core.schemas import (
     Claim,
     ClaimExtraction,
+    CorrectionBatch,
     EvidenceReviewReport,
     FactCheckReport,
     LlmCallLog,
+    ReviewBatch,
     Span,
 )
 from verimind.models.prompts import (
+    CORRECTOR_SYSTEM_PROMPT,
     EVIDENCE_CHECKER_SYSTEM_PROMPT,
     EXTRACTION_SYSTEM_PROMPT,
     FACT_CHECKER_SYSTEM_PROMPT,
+    REVIEWER_SYSTEM_PROMPT,
+    build_correction_prompt,
     build_evidence_review_prompt,
     build_extraction_prompt,
     build_fact_check_prompt,
+    build_review_prompt,
 )
 
 TModel = TypeVar("TModel", bound=BaseModel)
@@ -201,6 +207,32 @@ class LLMClient(ABC):
             context={"pairs": pairs},
         )
 
+    def propose_corrections(
+        self, text: str, dossiers: list[dict]
+    ) -> tuple[CorrectionBatch, LlmUsage]:
+        """修正员（角色 C）：对已判定有问题的主张给出最小改动的修正建议。"""
+        prompt = build_correction_prompt(text, dossiers)
+        return self.complete_structured(
+            role=RoleName.CORRECTOR,
+            prompt=prompt,
+            schema=CorrectionBatch,
+            system=CORRECTOR_SYSTEM_PROMPT,
+            context={"text": text, "dossiers": dossiers},
+        )
+
+    def review_corrections(
+        self, text: str, items: list[dict]
+    ) -> tuple[ReviewBatch, LlmUsage]:
+        """独立复核员（角色 D）：从"怀疑"的立场复核每一条修正。"""
+        prompt = build_review_prompt(text, items)
+        return self.complete_structured(
+            role=RoleName.INDEPENDENT_REVIEWER,
+            prompt=prompt,
+            schema=ReviewBatch,
+            system=REVIEWER_SYSTEM_PROMPT,
+            context={"text": text, "items": items},
+        )
+
     def health(self) -> tuple[bool, str]:
         """可用性自检（界面上可以显示"当前引擎是否可用"）。"""
         return True, "ok"
@@ -247,6 +279,39 @@ def build_client(
         model=settings.llm_model,
         base_url=settings.llm_base_url,
         api_key=settings.llm_api_key,
+        timeout_seconds=float(settings.llm_timeout_seconds),
+        max_retries=settings.llm_max_retries,
+        cache=cache,
+        budget=budget or CallBudget(limit=settings.llm_max_calls_per_run),
+        recorder=recorder,
+        run_id=run_id,
+    )
+
+
+def build_reviewer_client(
+    settings: Settings,
+    *,
+    cache: Any = None,
+    budget: CallBudget | None = None,
+    recorder: Callable[[LlmCallLog], None] | None = None,
+    run_id: str | None = None,
+) -> LLMClient | None:
+    """独立复核员专用的客户端。
+
+    只在你**单独配置了另一个模型**时返回它（此时运行模式会变成「多模型协同」，
+    复核才谈得上真正独立）；没配置就返回 None，由主模型兼任——
+    这种情况下报告与界面会如实写明"复核独立性有限"，而不是假装独立。
+    """
+    if not settings.reviewer_is_distinct:
+        return None
+
+    from verimind.models.openai_compat import OpenAICompatibleClient
+
+    return OpenAICompatibleClient(
+        provider=(settings.llm_reviewer_provider or settings.llm_provider).strip(),
+        model=(settings.llm_reviewer_model or settings.llm_model).strip(),
+        base_url=(settings.llm_reviewer_base_url or settings.llm_base_url).strip(),
+        api_key=(settings.llm_reviewer_api_key or settings.llm_api_key).strip(),
         timeout_seconds=float(settings.llm_timeout_seconds),
         max_retries=settings.llm_max_retries,
         cache=cache,

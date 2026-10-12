@@ -29,7 +29,14 @@ from typing import Callable
 from verimind.claims.extractor import ExtractionResult, PRIORITY_RANK
 from verimind.claims.preprocess import DocumentAnalysis, analyze_text
 from verimind.core.config import Settings, get_settings
-from verimind.core.enums import EvidenceLevel, EvidenceRelation, JudgedAspect, RoleName, RunMode
+from verimind.core.enums import (
+    EvidenceLevel,
+    EvidenceRelation,
+    JudgedAspect,
+    RoleName,
+    RoleStance,
+    RunMode,
+)
 from verimind.core.errors import InputError, InputTooLongError, VeriMindError
 from verimind.core.logging import get_logger
 from verimind.core.schemas import (
@@ -39,13 +46,23 @@ from verimind.core.schemas import (
     EvidenceReviewReport,
     FactCheckReport,
     LlmCallLog,
+    ReviewDraft,
     RolePosition,
     RunMetrics,
 )
-from verimind.models.base import CallBudget, LLMClient, LlmUsage, build_client
+from verimind.correction.applier import apply_corrections
+from verimind.correction.generator import build_corrections, build_dossiers
+from verimind.models.base import (
+    CallBudget,
+    LLMClient,
+    LlmUsage,
+    build_client,
+    build_reviewer_client,
+)
 from verimind.models.cache import LLMCache
 from verimind.models.mock_provider import RuleBasedOfflineClient
 from verimind.retrieval.router import RetrievalOutcome, run_retrieval
+from verimind.review.independent_review import accepted_for_application, combine_review
 from verimind.storage.repository import RunRepository
 from verimind.verification.consistency import conflicts_by_claim, find_internal_conflicts
 from verimind.verification.matcher import (
@@ -60,7 +77,7 @@ from verimind.verification.rules import (
     internal_evidence_for_conflicts,
 )
 
-PIPELINE_VERSION = "0.4.0"
+PIPELINE_VERSION = "0.5.0"
 
 #: 阶段 4 起，外部检索已经实装。这个开关用于让规则层知道"没查到"到底是因为没查，
 #: 还是因为查了没结果 —— 两者的结论不同（前者「暂无法核验」，后者可能是「证据不足」）。
@@ -160,9 +177,14 @@ def _merge_claims(
 # 报告辅助
 # ==========================================================================
 def _config_summary(
-    *, primary: LLMClient, rules: LLMClient, fact_checker_engine: LLMClient | None
+    *,
+    primary: LLMClient,
+    rules: LLMClient,
+    reviewer: LLMClient,
+    real_roles: bool,
 ) -> dict[str, dict[str, str]]:
     """报告里记录的"谁在干活"。绝不含密钥。"""
+
     def describe(client: LLMClient) -> dict[str, str]:
         return {
             "provider": client.provider,
@@ -170,14 +192,14 @@ def _config_summary(
             "simulated": "是（非真实大模型）" if client.is_simulated else "否",
         }
 
-    pending = {"provider": "未启用", "model": "阶段 4/5 实现"}
+    pending = {"provider": "未启用", "model": "未启用（离线规则引擎模式）"}
     return {
         "claim_extractor": describe(primary),
         "rule_baseline": describe(rules),
-        "fact_checker": describe(fact_checker_engine) if fact_checker_engine else dict(pending),
-        "evidence_checker": dict(pending),
-        "corrector": dict(pending),
-        "independent_reviewer": dict(pending),
+        "fact_checker": describe(primary) if real_roles else dict(pending),
+        "evidence_checker": describe(primary) if real_roles else dict(pending),
+        "corrector": describe(primary) if real_roles else dict(pending),
+        "independent_reviewer": describe(reviewer) if real_roles else dict(pending),
     }
 
 
@@ -398,6 +420,76 @@ def _content_pairs(
     return pairs
 
 
+def _evidence_for_claim(report: DetectionReport, claim_id: str) -> list[Evidence]:
+    """取出某条主张相关的全部证据（外部 + 原文内部）。"""
+    result = report.result_by_claim(claim_id)
+    if result is None:
+        return []
+    ids = list(
+        dict.fromkeys(
+            result.refuting_evidence_ids
+            + result.supporting_evidence_ids
+            + result.related_evidence_ids
+        )
+    )
+    return [item for item in (report.evidence_by_id(i) for i in ids) if item is not None]
+
+
+def _review_item(report: DetectionReport, correction) -> dict:  # noqa: ANN001
+    """构造复核员需要的材料（一条修正 + 它所引证据的原文片段）。"""
+    claim = report.claim_by_id(correction.claim_id)
+    result = report.result_by_claim(correction.claim_id)
+    evidence_payload = []
+    for item in _evidence_for_claim(report, correction.claim_id):
+        evidence_payload.append(
+            {
+                "evidence_id": item.evidence_id,
+                "来源": str(item.source.value),
+                "内容层级": str(item.level.value),
+                "标题": item.title,
+                "年份": item.year,
+                "片段": (item.snippet or "")[:400],
+                "判断理由": item.relation_rationale,
+            }
+        )
+    return {
+        "correction_id": correction.correction_id,
+        "claim_id": correction.claim_id,
+        "主张类型": claim.claim_type.value if claim else "未知",
+        "原判定状态": result.status.value if result else "未知",
+        "问题类型": [str(item.value) for item in result.problem_types] if result else [],
+        "待修改的原文片段": correction.original_span.text,
+        "修改后": correction.proposed_text,
+        "change_type": str(correction.change_type.value),
+        "修改理由": correction.rationale,
+        "所引证据": evidence_payload,
+    }
+
+
+def _reviewer_position(reviewer: LLMClient, draft) -> RolePosition:  # noqa: ANN001
+    """把复核员的结论记成一个角色意见（保留"谁做的复核"）。"""
+    if draft is None:
+        return RolePosition(
+            role=RoleName.INDEPENDENT_REVIEWER,
+            provider=reviewer.provider,
+            model=reviewer.model,
+            stance=RoleStance.UNCERTAIN,
+            conclusion="复核未能完成，该修正不予采用。",
+            reasoning="未获得复核结论时，系统不会把修正写进正文。",
+        )
+    passed = draft.issue_resolved and draft.no_new_overreach
+    return RolePosition(
+        role=RoleName.INDEPENDENT_REVIEWER,
+        provider=reviewer.provider,
+        model=reviewer.model,
+        stance=RoleStance.SUPPORT if passed else RoleStance.REFUTE,
+        conclusion=(
+            "原问题已解决且未引入新的无依据论断。" if passed else "复核未通过，该修正不予采用。"
+        ),
+        reasoning=f"{draft.issue_resolved_detail} {draft.no_new_overreach_detail}".strip(),
+    )
+
+
 def _apply_assessments(
     report: DetectionReport, assessment_report: FactCheckReport, engine: LLMClient
 ) -> list[str]:
@@ -519,6 +611,24 @@ def run_detection(
             raise exc
 
     run_mode = RunMode.MOCK if primary.is_simulated else settings.run_mode
+
+    # 独立复核员：单独配置了另一个模型就用它（这样复核才真正独立），
+    # 没配就由主模型兼任 —— 这种情况下必须在报告里写明"独立性有限"。
+    reviewer: LLMClient = primary
+    if not primary.is_simulated:
+        try:
+            distinct_reviewer = build_reviewer_client(
+                settings,
+                cache=cache,
+                budget=budget,
+                recorder=_make_recorder(repo),
+                run_id=run_id,
+            )
+        except VeriMindError as exc:
+            logger.warning("独立复核员客户端构建失败，改由主模型兼任：%s", exc)
+            distinct_reviewer = None
+        if distinct_reviewer is not None:
+            reviewer = distinct_reviewer
 
     report = DetectionReport.new(
         run_id=run_id,
@@ -661,7 +771,7 @@ def run_detection(
     report.evidence.extend(internal_evidence)
 
     # ---------------- ⑨ 规则裁决 ----------------
-    _notify(progress, "⑨ 规则裁决", 0.80)
+    _notify(progress, "⑨ 规则裁决", 0.78)
     context = AdjudicationContext(
         text=raw,
         analysis=analysis,
@@ -674,12 +784,12 @@ def run_detection(
     )
     report.verification_results = evaluate_all(report.claims, context)
     _notify(
-        progress, "⑨ 规则裁决", 0.86, f"完成 {len(report.verification_results)} 条主张的裁决"
+        progress, "⑨ 规则裁决", 0.82, f"完成 {len(report.verification_results)} 条主张的裁决"
     )
 
     # ---------------- ⑩ 事实审查员（角色 A） ----------------
     if not primary.is_simulated and report.claims:
-        _notify(progress, "⑩ 事实审查员复核", 0.90, f"调用 {primary.engine_id}")
+        _notify(progress, "⑩ 事实审查员复核", 0.84, f"调用 {primary.engine_id}")
         try:
             assessment_report, check_usage = primary.assess_claims(raw, report.claims)
             usages.append(check_usage)
@@ -688,15 +798,120 @@ def run_detection(
             logger.warning(fact_check_note)
         else:
             cross_check.extend(_apply_assessments(report, assessment_report, primary))
-            _notify(progress, "⑩ 事实审查员复核", 0.93, "角色结论已写入报告")
+            _notify(progress, "⑩ 事实审查员复核", 0.86, "角色结论已写入报告")
     elif primary.is_simulated:
         cross_check.append(
             "当前为离线规则引擎模式：没有大模型角色参与，因此报告中不存在"
             "「不同模型之间的分歧」——也不会假装存在。"
         )
 
-    # ---------------- ⑪ 生成报告 ----------------
-    _notify(progress, "⑪ 生成报告", 0.95)
+    # ---------------- ⑪ 修正生成（角色 C） ----------------
+    if primary.is_simulated:
+        cross_check.append(
+            "当前为离线规则引擎模式：修正与独立复核都需要大模型，因此本报告不含修正建议。"
+        )
+    else:
+        dossiers = build_dossiers(report)
+        if dossiers:
+            _notify(
+                progress,
+                "⑪ 修正生成（角色 C）",
+                0.88,
+                f"对 {len(dossiers)} 条已判定有问题的主张生成修正建议",
+            )
+            try:
+                correction_batch, correct_usage = primary.propose_corrections(
+                    raw, [dossier.as_prompt_payload() for dossier in dossiers]
+                )
+                usages.append(correct_usage)
+            except VeriMindError as exc:
+                cross_check.append(f"修正员（角色 C）未能完成，原因：{exc}")
+            else:
+                corrections, correction_notes = build_corrections(
+                    text=raw, report=report, batch=correction_batch
+                )
+                report.corrections = corrections
+                cross_check.extend(correction_notes)
+                _notify(
+                    progress,
+                    "⑪ 修正生成（角色 C）",
+                    0.90,
+                    f"生成 {len(corrections)} 条可用的修正建议",
+                )
+        else:
+            cross_check.append(
+                "本次没有任何主张被判定为「确实有问题」，因此不生成修正建议"
+                "（证据不足与暂无法核验都不会触发修正）。"
+            )
+
+    # ---------------- ⑫ 独立复核（角色 D） ----------------
+    if report.corrections:
+        items = [_review_item(report, correction) for correction in report.corrections]
+        _notify(
+            progress, "⑫ 独立复核（角色 D）", 0.92, f"复核 {len(report.corrections)} 条修正"
+        )
+        review_drafts: dict[str, ReviewDraft] = {}
+        review_failure: str | None = None
+        try:
+            review_batch, review_usage = reviewer.review_corrections(raw, items)
+            usages.append(review_usage)
+            review_drafts = {
+                draft.target_correction_id: draft for draft in review_batch.reviews
+            }
+        except VeriMindError as exc:
+            review_failure = f"独立复核未能完成（{exc}）。"
+            # 复核失败必须写进报告，而不只是写日志：用户有权知道"这次没有复核"
+            cross_check.append(review_failure)
+            logger.warning(review_failure)
+
+        for index, correction in enumerate(report.corrections, start=1):
+            claim = report.claim_by_id(correction.claim_id)
+            draft = review_drafts.get(correction.correction_id)
+            report.review_results.append(
+                combine_review(
+                    claim=claim,
+                    correction=correction,
+                    evidence_items=_evidence_for_claim(report, correction.claim_id),
+                    review_id=f"V{index:03d}",
+                    draft=draft,
+                    reviewer=_reviewer_position(reviewer, draft),
+                    failure_reason=review_failure,
+                )
+            )
+
+        accepted = [
+            correction
+            for correction in report.corrections
+            if any(
+                review.target_correction_id == correction.correction_id
+                and accepted_for_application(review)
+                for review in report.review_results
+            )
+        ]
+        outcome = apply_corrections(raw, accepted)
+        report.corrected_text = outcome.corrected_text
+        report.applied_correction_ids = outcome.applied_ids
+        report.rejected_correction_ids = [
+            correction.correction_id
+            for correction in report.corrections
+            if correction.correction_id not in outcome.applied_ids
+        ]
+        cross_check.extend(outcome.notes)
+        if reviewer is primary:
+            cross_check.append(
+                "提示：本次的独立复核员与修正员由**同一个模型**担任（未配置独立的复核模型），"
+                "因此复核的独立性有限——它仍然比「没有复核」要好，但不能等同于真正的多模型交叉验证。"
+                "在 .env 里配置 VERIMIND_LLM_REVIEWER_* 即可升级为多模型协同。"
+            )
+        _notify(
+            progress,
+            "⑫ 独立复核（角色 D）",
+            0.94,
+            f"采用 {len(outcome.applied_ids)} 条 / 拒绝 {len(report.rejected_correction_ids)} 条",
+        )
+
+    # ---------------- ⑬ 生成报告 ----------------
+    _notify(progress, "⑬ 生成报告", 0.96)
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     prompt_tokens = sum(usage.prompt_tokens or 0 for usage in usages)
     completion_tokens = sum(usage.completion_tokens or 0 for usage in usages)
@@ -750,7 +965,8 @@ def run_detection(
     report.llm_config_summary = _config_summary(
         primary=primary,
         rules=rules_engine,
-        fact_checker_engine=None if primary.is_simulated else primary,
+        reviewer=reviewer,
+        real_roles=not primary.is_simulated,
     )
     report.recompute()
 
