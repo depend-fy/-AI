@@ -123,14 +123,14 @@ if run_clicked:
         st.warning("请先输入待核验的文本。")
     else:
         progress_bar = st.progress(0.0, text="准备中…")
-        log_box = st.container()
+        # 阶段明细默认折叠：首屏只保留进度条，答辩需要时可展开查看每一步
+        stage_box = st.status("阶段明细", expanded=False)
 
         def on_progress(event: ProgressEvent) -> None:
             progress_bar.progress(min(max(event.ratio, 0.0), 1.0), text=event.stage)
             detail = f"：{event.detail}" if event.detail else ""
-            log_box.markdown(f"- {event.stage}{detail}")
+            stage_box.write(f"{event.stage}{detail}")
 
-        log_box.markdown("**检测进度**")
         try:
             report = run_detection(text, settings=settings, progress=on_progress)
         except VeriMindError as exc:

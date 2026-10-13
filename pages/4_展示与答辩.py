@@ -18,7 +18,7 @@ import streamlit as st
 from verimind.core.config import Settings
 from verimind.core.enums import STATUS_DISPLAY_ORDER
 from verimind.core.errors import VeriMindError
-from verimind.evaluation.dataset import categories, load_golden_set
+from verimind.evaluation.dataset import categories, dataset_stats, load_golden_set
 from verimind.storage.repository import RunRepository
 from verimind.ui.theme import badge, render_config_warnings, render_run_mode_banner
 from verimind.ui.theme import inject_css, render_footer
@@ -111,6 +111,7 @@ with tabs[0]:
 
     if cases:
         confirmed = sum(1 for case in cases if case.human_confirmed)
+        stats = dataset_stats(cases=cases)
         label_cols = st.columns(4)
         label_cols[0].metric("用例总数", len(cases))
         label_cols[1].metric("覆盖类别", len(categories(cases)))
@@ -192,7 +193,7 @@ with tabs[0]:
             "- 非学术事实核验（需要付费检索服务）\n"
             "- 作者 / 机构类核验（目前只实现年份与期刊）\n"
             "- B0 基线（让原模型自检自己）未实现\n"
-            "- 标注仍有 16 条待人工确认（存在自我实现偏差风险）"
+            f"- 标注集 {stats.total} 条，其中 {stats.awaiting} 条待人工确认（存在自我实现偏差风险）"
             "\n\n状态取值顺序：" + " → ".join(item.value for item in STATUS_DISPLAY_ORDER)
         )
 

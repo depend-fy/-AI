@@ -192,3 +192,76 @@ def test_claim_consensus_is_derived_from_existing_role_data() -> None:
         role_positions=[position(RoleName.FACT_CHECKER, RoleStance.SUPPORT)],
     )
     assert claim_consensus(agreed)[0] == "高度一致"
+
+def test_evidence_strength_levels_are_rule_based() -> None:
+    """证据强度必须由规则判定：A=有原文片段并形成判断，B=仅元数据，C=只有线索，无=没有资料。"""
+    import uuid
+
+    from verimind.core.enums import (
+        EvidenceLevel,
+        EvidenceRelation,
+        EvidenceSource,
+        JudgedAspect,
+        VerificationStatus,
+    )
+    from verimind.core.schemas import (
+        Evidence,
+        SearchRecord,
+        SearchTrace,
+        Span,
+        VerificationResult,
+    )
+    from verimind.verification.evidence_strength import assess_evidence_strength
+
+    trace = SearchTrace(
+        records=[SearchRecord(source=EvidenceSource.CROSSREF, query="测试", status="检索成功")]
+    )
+
+    def result(supporting: list[str], refuting: list[str], related: list[str]) -> VerificationResult:
+        return VerificationResult(
+            claim_id="C001",
+            status=VerificationStatus.VERIFIED if supporting else VerificationStatus.INSUFFICIENT,
+            rationale="测试",
+            supporting_evidence_ids=supporting,
+            refuting_evidence_ids=refuting,
+            related_evidence_ids=related,
+            missing_evidence=[] if supporting else ["测试"],
+            search_trace=trace,
+        )
+
+    def evidence(identifier: str, *, level: EvidenceLevel, relation: EvidenceRelation, aspect=None, snippet=None) -> Evidence:
+        return Evidence(
+            evidence_id=identifier,
+            claim_ids=["C001"],
+            source=EvidenceSource.OPENALEX,
+            level=level,
+            url="https://example.org/x",
+            title="测试文献",
+            year=2020,
+            relation=relation,
+            judged_aspect=aspect,
+            snippet=snippet,
+            relation_rationale="测试",
+        )
+
+    # 无证据
+    assert assess_evidence_strength(result([], [], []), []).level == "未获证据"
+
+    # A：摘要级证据 + 内容层面判断 + 有片段
+    item_a = evidence(
+        "E001",
+        level=EvidenceLevel.ABSTRACT,
+        relation=EvidenceRelation.REFUTES,
+        aspect=JudgedAspect.CONTENT,
+        snippet="摘要中的原始片段",
+    )
+    verdict_a = assess_evidence_strength(result([], ["E001"], []), [item_a])
+    assert verdict_a.level == "A", verdict_a
+
+    # B：仅元数据、且只有一个来源
+    item_b = evidence("E002", level=EvidenceLevel.METADATA_ONLY, relation=EvidenceRelation.SUPPORTS, aspect=JudgedAspect.BIBLIOGRAPHIC)
+    assert assess_evidence_strength(result(["E002"], [], []), [item_b]).level == "B"
+
+    # C：只有相关资料、未形成支持或反驳判断
+    item_c = evidence("E003", level=EvidenceLevel.METADATA_ONLY, relation=EvidenceRelation.UNKNOWN)
+    assert assess_evidence_strength(result([], [], ["E003"]), [item_c]).level == "C"

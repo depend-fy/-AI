@@ -16,6 +16,7 @@ from verimind.core.schemas import DetectionReport
 from verimind.core.errors import VeriMindError
 from verimind.storage.repository import RunRepository
 from verimind.ui.components import (
+    render_conclusion_summary,
     render_claim_card,
     render_disclaimer,
     render_limitations,
@@ -87,6 +88,8 @@ if report is None:
 # ---------------------------------------------------------------- 报告头部
 render_report_header(report)
 render_stat_cards(report)
+
+render_conclusion_summary(report)
 
 # ---------------------------------------------------------------- 导出
 _export_left, _export_right = st.columns([1, 3])

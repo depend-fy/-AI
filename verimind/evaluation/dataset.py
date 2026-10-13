@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import Field
@@ -107,3 +108,25 @@ def categories(cases: list[GoldenCase]) -> list[str]:
         if case.category not in seen:
             seen.append(case.category)
     return seen
+
+
+@dataclass(frozen=True)
+class DatasetStats:
+    """标注集的统计口径（唯一数据源，避免各页面各写一个数字）。"""
+
+    total: int
+    confirmed: int
+    awaiting: int
+    categories: int
+
+
+def dataset_stats(path: Path | None = None, cases: list[GoldenCase] | None = None) -> DatasetStats:
+    """统一计算标注集口径：总数 / 已人工确认 / 待确认 / 覆盖类别数。"""
+    items = cases if cases is not None else load_golden_set(path)
+    confirmed = sum(1 for item in items if item.human_confirmed)
+    return DatasetStats(
+        total=len(items),
+        confirmed=confirmed,
+        awaiting=len(items) - confirmed,
+        categories=len(categories(items)),
+    )

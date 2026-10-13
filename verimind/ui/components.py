@@ -35,6 +35,7 @@ from verimind.ui.theme import (
     severity_badge_html,
     status_badge_html,
 )
+from verimind.verification.evidence_strength import assess_evidence_strength
 from verimind.verification.rules import RULE_LIBRARY
 
 _MARK_BG = "#fff3b0"
@@ -287,6 +288,11 @@ def render_claim_card(
                     render_evidence_item(evidence)
         else:
             st.caption("相关证据：无。本阶段尚未接入外部检索，因此没有外部证据。")
+
+        render_strength_badge(
+            result,
+            [item for item in (report.evidence_by_id(i) for i in evidence_ids) if item is not None],
+        )
 
         if result.missing_evidence:
             st.markdown("**还缺什么证据才能判断**")
@@ -630,3 +636,60 @@ def render_evidence_chain(report: DetectionReport, claim: Claim, result: Verific
     st.markdown("**证据链**")
     for line in lines:
         st.markdown(f"- {line}")
+
+def data_source_note(report: DetectionReport) -> tuple[str, str]:
+    """如实标注本次结果的数据来源：本地缓存还是实时检索。"""
+    requests = report.metrics.retrieval_requests if report.metrics else 0
+    cache_hits = report.metrics.retrieval_cache_hits if report.metrics else 0
+    if requests > 0:
+        return (
+            f"数据来源：实时检索（本次发出 {requests} 次外部请求）",
+            "#1a7f37",
+        )
+    if cache_hits > 0:
+        return (
+            f"数据来源：本地缓存（已验证数据，本次未联网；缓存命中 {cache_hits} 次）",
+            "#a15c07",
+        )
+    return ("数据来源：未进行外部检索", "#5f6b7a")
+
+
+def render_conclusion_summary(report: DetectionReport) -> None:
+    """报告开头的一段结论摘要：只给计数与要点，不给任何概率化分数。"""
+    stats = report.stats
+    problem = [result for result in report.verification_results if result.is_suspicious]
+    note, color = data_source_note(report)
+    st.markdown("#### 结论摘要")
+    st.markdown(
+        f"- 本次共核验 **{stats.total_claims}** 条主张：**{stats.suspicious_claims}** 条判定存在问题"
+        f"（存在矛盾 / 部分支持 / 来源冲突），**{stats.flagged_claims}** 条需关注，"
+        f"**{stats.status_counts.get('证据不足', 0)}** 条证据不足，"
+        f"**{stats.status_counts.get('暂无法核验', 0)}** 条暂无法核验。"
+    )
+    if problem:
+        detail = "；".join(
+            f"「{report.claim_by_id(item.claim_id).source_span.text[:18]}」→ {item.status.value}"
+            for item in problem[:3]
+            if report.claim_by_id(item.claim_id) is not None
+        )
+        st.markdown(f"- 需要优先处理：{detail}。")
+    else:
+        st.markdown("- 本次没有判定为「存在问题」的主张。")
+    st.markdown(
+        "- **证据不足不等于错误**：它表示在本次检索范围内还没有取得足以支持或反驳的资料。"
+        "本报告不提供未经过校准的概率化分数。"
+    )
+    st.markdown(
+        badge(note, fg=color, bg=color + "14", border=color + "55"),
+        unsafe_allow_html=True,
+    )
+
+
+def render_strength_badge(result: VerificationResult, evidence_items: list[Evidence]) -> None:
+    """证据强度徽标（A/B/C/未获证据）。"""
+    verdict = assess_evidence_strength(result, evidence_items)
+    st.markdown(
+        badge(verdict.label, fg=verdict.fg, bg=verdict.bg, border=verdict.border)
+        + f'<span style="color:#444;font-size:0.86rem;">{verdict.reason}</span>',
+        unsafe_allow_html=True,
+    )

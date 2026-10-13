@@ -15,6 +15,7 @@ import streamlit as st
 
 from verimind import __version__
 from verimind.core.config import Settings
+from verimind.evaluation.dataset import dataset_stats
 from verimind.core.enums import (
     EXPECTED_PROBLEM_TYPE_COUNT,
     EXPECTED_STATUS_COUNT,
@@ -39,14 +40,15 @@ st.set_page_config(
 
 settings = Settings()
 inject_css()
+dataset = dataset_stats()
 
 # ---------------------------------------------------------------- 页头
 hero(
     "智鉴 AI（VeriMind AI）",
     "多模型协同的 <b>AI 幻觉检测、证据溯源、错误归因与自动修正</b>系统"
     f"　<span style='color:#6b7480;font-size:0.9rem;'>Demo 版 v{__version__}</span><br>"
-    "对文本中的事实性论断进行<b>证据核验、错误归因与可复核的修正建议</b>。"
-    "每条结论均附外部证据与判定规则，可逐条追溯。",
+    "让每条 AI 事实主张都有<b>可追溯的证据</b>与<b>复核结论</b>。"
+    "系统不把模型怀疑当作结论：每条判断均须经过外部证据、明确规则与独立复核。",
     [
         "① 拆解主张",
         "② 检索真实文献",
@@ -172,7 +174,7 @@ if st.button("执行样例核验", key="one_click_demo", type="primary"):
         for _line in _samples.read_text(encoding="utf-8").splitlines():
             if _line.strip():
                 _item = _json.loads(_line)
-                if _item.get("id") == "real_doi_wrong_claim":
+                if _item.get("id") == "mixed_status_demo":
                     _demo_text = str(_item["text"])
                     break
     if not _demo_text:
@@ -271,7 +273,7 @@ st.info(
     "「改了」与「改对了」也是两个问题。修正是**代码级的保守**——"
     "编造的数字会被确定性检查拦下，复核未通过的修改一律不改。\n\n"
     "**尚未做到**：论文全文阅读（现在最多读到摘要）、中文文献检索（数据源没有公开 API）、"
-    "非学术事实核验（需要付费检索服务）；标注集仍有 16 条待人工确认。",
+    f"非学术事实核验（需要付费检索服务）；标注集共 {dataset.total} 条，其中 {dataset.confirmed} 条已经人工逐条确认。",
 )
 
 st.divider()
