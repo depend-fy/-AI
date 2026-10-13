@@ -11,7 +11,7 @@ from __future__ import annotations
 import streamlit as st
 
 from verimind.core.config import Settings
-from verimind.core.enums import Severity, VerificationStatus
+from verimind.core.enums import Severity
 from verimind.core.schemas import DetectionReport
 from verimind.core.errors import VeriMindError
 from verimind.storage.repository import RunRepository

@@ -19,6 +19,8 @@ import streamlit as st
 
 from verimind.core.enums import (
     STATUS_DISPLAY_ORDER,
+    EvidenceRelation,
+    JudgedAspect,
     ReviewOverall,
     Severity,
     VerificationStatus,

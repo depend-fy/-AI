@@ -176,11 +176,16 @@ Copy-Item .env.example .env    # 然后用记事本填 VERIMIND_LLM_API_KEY
 ## 四、如何测试
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -q          # 235 passed（默认跳过 live 测试）
+.\.venv\Scripts\python.exe -m pytest -q          # 237 passed（默认跳过 live 测试）
 .\.venv\Scripts\python.exe -m pytest -m live -q  # 只跑真实调用测试（会花钱）
+.\.venv\Scripts\python.exe -m pyflakes verimind pages app.py scripts    # 静态检查（当前 0 告警；需 pip install pyflakes）
+
+> 静态检查不是可选项：它在开发末期查出过两个真实缺陷——报告页因缺少 EvidenceRelation 导入
+> 而在浏览器里直接崩溃，以及 rules.py 里一个侥幸没被触发的未定义名 Span。
+> 这类问题语法检查与单元测试都发现不了。
 ```
 
-**当前状态（已实测）**：`235 passed`，除标记为 `live` 的之外全部离线可跑、零成本。
+**当前状态（已实测）**：`237 passed`，除标记为 `live` 的之外全部离线可跑、零成本。
 
 | 测试文件 | 盯住什么问题 |
 | --- | --- |

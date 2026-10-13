@@ -123,3 +123,95 @@ def test_implemented_pages_do_not_claim_to_be_placeholders() -> None:
         app.run()
         info_text = "\n".join(element.value for element in app.info)
         assert "尚未实现" not in info_text, f"{script} 已经是实现页，却仍显示占位提示"
+
+def test_report_page_renders_a_real_report_with_evidence_and_corrections(tmp_path: Path) -> None:
+    """回归测试：报告页在**真的有报告**时必须能渲染完整内容。
+
+    这个用例是补出来的：之前 236 个测试全绿，但报告页走的都是「没有报告」的分支，
+    于是 components.py 里 render_evidence_item 用到的 EvidenceRelation 一直没被导入
+    （NameError），用户一在浏览器里打开报告就崩。
+    教训：**UI 测试必须喂进真实数据，只测空状态等于没测。**
+    """
+    import json as _json
+
+    from verimind.core.config import Settings as _Settings
+    from verimind.core.enums import (
+        ChangeType as _ChangeType,
+        ReviewCheckType as _CheckType,
+        ReviewOverall as _Overall,
+        RoleName as _RoleName,
+        RoleStance as _Stance,
+    )
+    from verimind.core.pipeline import run_detection as _run
+    from verimind.core.schemas import (
+        Correction as _Correction,
+        ReviewCheck as _ReviewCheck,
+        ReviewResult as _ReviewResult,
+        RolePosition as _RolePosition,
+    )
+
+    # 1) 用离线引擎真跑一份带「文内矛盾 + 内部证据」的报告（零成本、不联网）
+    samples = PROJECT_ROOT / "examples" / "sample_inputs.jsonl"
+    text = ""
+    for line in samples.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            item = _json.loads(line)
+            if item.get("id") == "internal_conflict":
+                text = str(item["text"])
+                break
+    assert text, "找不到 internal_conflict 样例"
+
+    settings = _Settings(
+        _env_file=None,
+        data_dir=tmp_path,
+        save_runs=False,
+        llm_provider="mock",
+        retrieve_enabled=False,
+    )
+    report = _run(text, settings=settings)
+    assert report.claims and report.evidence, "样例应当产生主张与内部证据"
+
+    # 2) 再挂一条「已复核但未采用」的修正，把修正区的渲染路径也覆盖到
+    claim = report.claims[0]
+    correction = _Correction(
+        correction_id="K001",
+        claim_id=claim.claim_id,
+        original_span=claim.source_span,
+        proposed_text="",
+        change_type=_ChangeType.DELETE,
+        rationale="回归测试用：删除该片段",
+    )
+    review = _ReviewResult(
+        review_id="V001",
+        target_correction_id="K001",
+        checks=[
+            _ReviewCheck(check=_CheckType.CORRECTION_EVIDENCE_BACKED, passed=True, detail="测试：有证据"),
+            _ReviewCheck(check=_CheckType.EVIDENCE_MATCHES_TEXT, passed=True, detail="测试：匹配"),
+            _ReviewCheck(check=_CheckType.NO_NEW_FACT_ERROR, passed=True, detail="测试：无新事实"),
+            _ReviewCheck(check=_CheckType.ORIGINAL_ISSUE_RESOLVED, passed=False, detail="测试：未解决"),
+            _ReviewCheck(check=_CheckType.NO_NEW_OVERREACH, passed=True, detail="测试：无过度推断"),
+        ],
+        overall=_Overall.FAILED,
+        unresolved=["需要人工确认"],
+        reviewer=_RolePosition(
+            role=_RoleName.INDEPENDENT_REVIEWER,
+            provider="test",
+            model="test-model",
+            stance=_Stance.REFUTE,
+            conclusion="未通过",
+        ),
+    )
+    report = report.model_copy(
+        update={
+            "corrections": [correction],
+            "review_results": [review],
+            "rejected_correction_ids": ["K001"],
+        }
+    )
+
+    # 3) 把报告塞进会话状态后再渲染报告页
+    app = AppTest.from_file(str(PROJECT_ROOT / "pages/2_检测报告.py"), default_timeout=180)
+    app.session_state["last_report"] = report
+    app.run()
+    messages = [str(element.value) for element in app.exception]
+    assert not app.exception, f"报告页使用真实报告渲染时报错：{messages}"

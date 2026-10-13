@@ -41,6 +41,7 @@ from verimind.core.enums import (
     VerificationStatus,
 )
 from verimind.core.schemas import (
+    Span,
     Claim,
     Evidence,
     SearchRecord,

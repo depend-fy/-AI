@@ -26,7 +26,6 @@ from verimind.core.enums import (
     ClaimType,
     Checkability,
     EvidenceRelation,
-    EvidenceSource,
     JudgedAspect,
     MatchBasis,
     SearchStatus,
