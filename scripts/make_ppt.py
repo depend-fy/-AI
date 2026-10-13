@@ -19,7 +19,7 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
-from pptx.util import Emu, Inches as _Inches, Pt as _Pt
+from pptx.util import Inches as _Inches, Pt as _Pt
 
 # 画布按 10 x 5.625 英寸（16:9）出图：LibreOffice 的预览按 10 英寸宽排版，
 # 若声明 13.333 英寸会被放大 1.33 倍并裁掉右下角。这里统一等比缩放 0.75，

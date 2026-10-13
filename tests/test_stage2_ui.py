@@ -127,3 +127,68 @@ def test_report_page_hides_report_when_nothing_selected() -> None:
     """没有报告时应当明确提示并停止，而不是渲染一堆空卡片。"""
     app = open_page(REPORT)
     assert not app.metric, "没有报告时不应出现统计卡片"
+
+def test_claim_consensus_is_derived_from_existing_role_data() -> None:
+    """共识程度必须由**已有的**角色立场与证据状态推出，不得引入任何概率数字。"""
+    from verimind.core.enums import RoleName, RoleStance, VerificationStatus
+    from verimind.core.schemas import RolePosition, SearchRecord, SearchTrace, VerificationResult
+    from verimind.ui.components import claim_consensus
+
+    def position(role: RoleName, stance: RoleStance) -> RolePosition:
+        return RolePosition(
+            role=role,
+            provider="test",
+            model="test-model",
+            stance=stance,
+            conclusion="测试结论",
+        )
+
+    trace = SearchTrace(records=[SearchRecord(source=None, query="测试", status="检索成功")])
+
+    # 只有规则层结论，没有角色意见
+    alone = VerificationResult(
+        claim_id="C001",
+        status=VerificationStatus.INSUFFICIENT,
+        rationale="测试",
+        missing_evidence=["需要更多证据"],
+        search_trace=trace,
+    )
+    assert claim_consensus(alone)[0] == "单层判定"
+
+    # 两个角色意见相左
+    split = VerificationResult(
+        claim_id="C002",
+        status=VerificationStatus.INSUFFICIENT,
+        rationale="测试",
+        missing_evidence=["需要更多证据"],
+        search_trace=trace,
+        role_positions=[
+            position(RoleName.FACT_CHECKER, RoleStance.SUPPORT),
+            position(RoleName.EVIDENCE_CHECKER, RoleStance.REFUTE),
+        ],
+    )
+    label, detail, *_ = claim_consensus(split)
+    assert label == "存在分歧"
+    assert "事实审查员" in detail and "证据审查员" in detail, "分歧必须指明是谁与谁不一致"
+
+    # 意见一致，但没有任何外部证据
+    no_evidence = VerificationResult(
+        claim_id="C003",
+        status=VerificationStatus.INSUFFICIENT,
+        rationale="测试",
+        missing_evidence=["需要更多证据"],
+        search_trace=trace,
+        role_positions=[position(RoleName.FACT_CHECKER, RoleStance.SUPPORT)],
+    )
+    assert claim_consensus(no_evidence)[0] == "证据不足"
+
+    # 意见一致且有证据
+    agreed = VerificationResult(
+        claim_id="C004",
+        status=VerificationStatus.VERIFIED,
+        rationale="测试",
+        supporting_evidence_ids=["E001"],
+        search_trace=trace,
+        role_positions=[position(RoleName.FACT_CHECKER, RoleStance.SUPPORT)],
+    )
+    assert claim_consensus(agreed)[0] == "高度一致"

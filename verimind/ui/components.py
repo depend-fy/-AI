@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import html
 
 import streamlit as st
@@ -20,6 +22,7 @@ import streamlit as st
 from verimind.core.enums import (
     STATUS_DISPLAY_ORDER,
     EvidenceRelation,
+    RoleStance,
     JudgedAspect,
     ReviewOverall,
     Severity,
@@ -241,6 +244,8 @@ def render_claim_card(
             unsafe_allow_html=True,
         )
 
+        render_consensus(result)
+
         st.markdown("**原文定位**（高亮部分为该主张）")
         render_sentence_with_highlight(claim)
 
@@ -287,6 +292,8 @@ def render_claim_card(
             st.markdown("**还缺什么证据才能判断**")
             for item in result.missing_evidence:
                 st.markdown(f"- {item}")
+
+        render_evidence_chain(report, claim, result)
 
         render_search_trace(result)
 
@@ -503,3 +510,123 @@ def render_limitations(report: DetectionReport) -> None:
 
 def render_disclaimer(report: DetectionReport) -> None:
     st.caption(report.disclaimer)
+
+
+# --------------------------------------------------------------------------
+# 共识程度与证据链（反馈建议：让多模型结论与证据路径可核对）
+# --------------------------------------------------------------------------
+def claim_consensus(result: VerificationResult) -> tuple[str, str, str, str, str]:
+    """依据**已有的**角色立场与证据状态给出共识标识。
+
+    刻意不引入任何概率或"置信度"数字：
+        · 角色意见相左 → 存在分歧
+        · 意见一致但没有任何外部证据 → 证据不足
+        · 意见一致且有证据 → 高度一致
+        · 只有规则层结论、无角色意见 → 单层判定
+    返回 (标识, 说明, 前景色, 背景色, 边框色)。
+    """
+    positions = [p for p in result.role_positions if p.stance is not RoleStance.NOT_APPLICABLE]
+    if not positions:
+        return (
+            "单层判定",
+            "本条仅有规则层结论，没有可交叉比对的角色意见。",
+            "#5f6b7a", "#f4f5f7", "#d5d9df",
+        )
+    stances = {p.stance for p in positions}
+    if RoleStance.SUPPORT in stances and RoleStance.REFUTE in stances:
+        detail = "；".join(f"{p.role.value}主张{p.stance.value}" for p in positions)
+        return ("存在分歧", f"分歧点：{detail}。", "#a15c07", "#fff6e5", "#f2d08a")
+    if not result.supporting_evidence_ids and not result.refuting_evidence_ids:
+        return (
+            "证据不足",
+            "各角色意见一致，但均未取得可支撑判断的外部证据。",
+            "#3a5a8c", "#eef3fb", "#b9cbe8",
+        )
+    return (
+        "高度一致",
+        f"{len(positions)} 个角色意见一致，且已有证据支撑判断。",
+        "#1a7f37", "#e9f7ee", "#a7e0b8",
+    )
+
+
+def render_consensus(result: VerificationResult) -> None:
+    """在主张卡片顶部显示共识程度（有分歧时逐条说明是谁与谁不一致）。"""
+    label, detail, fg, bg, border = claim_consensus(result)
+    st.markdown(
+        badge(f"共识程度：{label}", fg=fg, bg=bg, border=border)
+        + f'<span style="color:#444;font-size:0.86rem;">{detail}</span>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_evidence_chain(report: DetectionReport, claim: Claim, result: VerificationResult) -> None:
+    """证据链：论断 → 检索 → 命中文献（含时效性）→ 原文依据 → 裁决与复核。"""
+    lines: list[str] = []
+    lines.append(f"**① 论断**　{claim.source_span.text}　（原文第 {claim.source_span.start}–{claim.source_span.end} 字符）")
+
+    queries: list[str] = []
+    hits = misses = 0
+    trace = getattr(result, "search_trace", None)
+    if trace is not None:
+        for record in trace.records:
+            if record.query:
+                queries.append(record.query)
+            status = str(getattr(record.status, "value", record.status))
+            # 精确比对枚举取值，避免模糊匹配把「已检索但无命中」算成命中
+            if status == "检索成功":
+                hits += 1
+            elif status in ("已检索但无命中", "检索失败"):
+                misses += 1
+    if queries:
+        shown = "；".join(queries[:3])
+        suffix = f"（共 {len(queries)} 次，命中 {hits}，未命中 {misses}）" if len(queries) > 3 else ""
+        lines.append(f"**② 检索关键词**　{shown}{suffix}")
+    else:
+        lines.append("**② 检索关键词**　无（本条未触发外部检索）")
+
+    evidence_ids = list(
+        dict.fromkeys(
+            result.refuting_evidence_ids + result.supporting_evidence_ids + result.related_evidence_ids
+        )
+    )
+    evidence_items = [item for item in (report.evidence_by_id(i) for i in evidence_ids) if item is not None]
+    current_year = datetime.now().year
+    if evidence_items:
+        parts = []
+        for item in evidence_items[:2]:
+            label = item.title or item.url or item.evidence_id
+            if item.year:
+                age = max(current_year - int(item.year), 0)
+                label += f"（{item.year} 年，距今 {age} 年）"
+            parts.append(f"{label}　[{item.source.value}·{item.level.value}]")
+        lines.append("**③ 命中文献**　" + "；".join(parts))
+        snippet = next((item.snippet for item in evidence_items if item.snippet), None)
+        lines.append(
+            "**④ 原文依据**　" + (snippet[:180] + "…" if snippet and len(snippet) > 180 else snippet)
+            if snippet
+            else "**④ 原文依据**　无（仅比对到元数据，未取得摘要或全文）"
+        )
+    else:
+        lines.append("**③ 命中文献**　无")
+        lines.append("**④ 原文依据**　无")
+
+    rule = result.adjudication_rule or "未命中规则"
+    lines.append(f"**⑤ 裁决**　{result.status.value}（规则 {rule}）")
+
+    review = next(
+        (
+            item
+            for item in report.review_results
+            if any(
+                correction.correction_id == item.target_correction_id
+                and correction.claim_id == claim.claim_id
+                for correction in report.corrections
+            )
+        ),
+        None,
+    )
+    if review is not None:
+        lines.append(f"**⑥ 独立复核**　{review.overall.value}")
+    st.markdown("**证据链**")
+    for line in lines:
+        st.markdown(f"- {line}")
