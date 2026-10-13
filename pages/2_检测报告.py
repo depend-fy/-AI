@@ -98,7 +98,7 @@ with _export_left:
         file_name=f"verimind-report-{report.run_id[:8]}.md",
         mime="text/markdown",
         key="download_report_md",
-        use_container_width=True,
+        width="stretch",
     )
 with _export_right:
     st.caption(

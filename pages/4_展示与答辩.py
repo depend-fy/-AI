@@ -161,7 +161,7 @@ with tabs[0]:
                     for item in summaries
                 ]
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         st.caption(

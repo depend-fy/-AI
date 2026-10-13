@@ -62,7 +62,7 @@ if samples:
     columns = st.columns(len(samples))
     for column, sample in zip(columns, samples):
         with column:
-            if st.button(sample["title"], key=f"load_{sample['id']}", use_container_width=True):
+            if st.button(sample["title"], key=f"load_{sample['id']}", width="stretch"):
                 st.session_state["workbench_text"] = sample["text"]
                 st.session_state["workbench_note"] = sample["note"]
                 st.session_state["workbench_loaded"] = sample["title"]
@@ -112,7 +112,7 @@ with count_col:
         st.rerun()
 
 with action_col:
-    run_clicked = st.button("🚀 开始检测", type="primary", key="run_detection", use_container_width=True)
+    run_clicked = st.button("🚀 开始检测", type="primary", key="run_detection", width="stretch")
 
 if over_limit:
     st.error(f"文本超过 {settings.max_input_chars} 字的限制，请缩短后重试。")

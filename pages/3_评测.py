@@ -107,7 +107,7 @@ with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源、标�
                 for case in cases
             ]
         ),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -268,7 +268,7 @@ confusion = pd.DataFrame(
     index=["实际：有问题", "实际：没问题"],
     columns=["预测：有问题", "预测：没问题"],
 )
-st.dataframe(confusion, use_container_width=True)
+st.dataframe(confusion, width="stretch")
 st.caption(
     f"未命中标注片段的用例：{metrics.get('unmatched_count', 0)} 条"
     "（拆解环节没找到与标注对齐的那条主张——这本身就是一个需要如实报告的结果）。"
@@ -290,7 +290,7 @@ st.dataframe(
             for name, item in by_category.items()
         ]
     ),
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -320,7 +320,7 @@ st.dataframe(
             for row in rows
         ]
     ),
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
