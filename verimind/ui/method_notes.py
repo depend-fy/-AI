@@ -1,0 +1,127 @@
+"""方法与答辩材料：从首页搬来的技术说明（评审建议：首页只留第一印象，细节放答辩页）。
+
+这些内容此前堆在首页，会与「开始核验」抢注意力；搬到这里后：
+    · 首页保持"一个动作 + 快速体验 + 状态说明"；
+    · 答辩时从「展示与答辩 → 答辩备查」逐块展开，技术严谨性一点没少。
+"""
+
+from __future__ import annotations
+
+import streamlit as st
+
+from verimind.core.config import Settings
+
+
+def render_problem_definition() -> None:
+    """问题定义：六类可观察的输出问题（不使用"幻觉"作为判语，只描述可核验项）。"""
+    st.markdown("##### 问题定义")
+    st.markdown(
+        "大模型生成内容中的问题可以按**可核验性**分为六类：\n"
+        "1. 事实错误（与注册记录、公开来源不符）\n"
+        "2. 虚构文献 / 不存在的 DOI\n"
+        "3. 引用与结论不匹配（文献真实，但没说过那句话）\n"
+        "4. 数字、时间、人物、机构错误\n"
+        "5. 逻辑推断过度（相关性被表述为因果）\n"
+        "6. 证据不足或来源之间互相冲突\n\n"
+        "关键困难在于：**同一个模型很难可靠地识别自己的错误**——既可能漏掉，也可能把正确内容误判为错误。"
+        "因此本系统不采用「让模型自评」的路线。"
+    )
+
+
+def render_technical_route() -> None:
+    """技术路线：11 个职责单一的环节，每一步都有明确输入输出。"""
+    st.markdown("##### 技术路线")
+    st.markdown(
+        "把「检测」拆成 11 个职责单一、可单独测试的环节，每一步的输入输出都是结构化数据：\n"
+        "1. 输入校验　2. 规则引擎拆解（基线，始终执行）　3. 模型拆解主张　4. 文内一致性检查\n"
+        "5. 外部检索（Crossref / OpenAlex / arXiv）　6. 元数据匹配　7. 证据审查（内容层面）\n"
+        "8. 规则裁决（6 状态 / 8 问题类型）　9. 事实审查（提出核验问题）\n"
+        "10. 最小改动修正　11. 独立复核（三项确定性检查 + 两项语义检查）\n\n"
+        "大模型只产出结构化判断；**最终结论由可解释的规则表裁决**。"
+    )
+
+
+def render_differences() -> None:
+    """与常见做法的区别。"""
+    st.markdown("##### 与常见做法的区别")
+    st.markdown(
+        "- **证据可点击追溯**：报告中每条判断都能点开到真实来源，并保留原始响应留档路径\n"
+        "- **模型不下最终结论**：状态与问题类型由规则表裁决，每条结论都能说出命中的规则编号\n"
+        "- **无证据不判错**：将「证据不足 / 暂无法核验」作为一等公民状态，绝不把「查不到」说成「错误」\n"
+        "- **判断分层**：区分「文献是否存在」「书目信息是否一致」「内容结论是否被支持」，元数据不得用于内容判断\n"
+        "- **修正必须过独立复核**：改事实须有证据，复核不通过（甚至未完成）一律不改\n"
+        "- **不给假概率**：未做概率校准，因此不提供貌似精确的「幻觉概率」分数"
+    )
+
+
+def render_pipeline_diagram() -> None:
+    """核验流程（与代码中的 11 步一致）。"""
+    st.markdown("##### 核验流程")
+    st.markdown(
+        """
+```text
+输入文本
+  → ① 输入校验与长度限制
+  → ② 规则引擎拆解（基线，始终执行）
+  → ③ 模型拆解原子主张（带字符级原文位置）
+  → ④ 文内一致性检查（同 DOI 两年份 / 同指标两数值）
+  → ⑤ 外部检索：Crossref / OpenAlex / arXiv（免密钥公开接口）
+  → ⑥ 元数据匹配：文献是否存在、书目信息是否一致
+  → ⑦ 证据审查：内容层面是否被支持（必须引用摘要原句）
+  → ⑧ 规则裁决：6 种状态 + 8 类问题 + 严重度 + 缺失证据清单
+  → ⑨ 事实审查：提出该主张需要回答的核验问题
+  → ⑩ 最小改动修正（无证据不许改事实）
+  → ⑪ 独立复核：原问题是否解决 / 是否引入新的无依据结论
+  → 可追溯检测报告（含未解决问题与系统局限）
+```
+"""
+    )
+
+
+def render_environment(settings: Settings) -> None:
+    """运行环境与配置明细（评审建议：开发信息从首屏移出，放进答辩页）。"""
+    st.markdown("##### 运行环境与配置")
+    st.caption("以下为开发与溯源信息，演示时无需展示；答辩被问到实现细节时可在此展开核对。")
+    env_col1, env_col2 = st.columns(2)
+    with env_col1:
+        st.markdown(
+            f"""
+| 配置项 | 当前值 |
+| --- | --- |
+| 运行模式 | **{settings.run_mode.value}** |
+| 生成模型提供方 | `{settings.llm_provider}` |
+| 生成模型 | `{settings.llm_model}` |
+| 密钥 | `{settings.masked_api_key}` |
+| 单次调用上限 | {settings.llm_max_calls_per_run} 次 |
+| 文献检索 | {"已启用" if settings.retrieve_enabled else "已关闭"}（Crossref / OpenAlex / arXiv，免密钥） |
+"""
+        )
+    with env_col2:
+        st.markdown(
+            f"""
+| 运行限制 | 当前值 |
+| --- | --- |
+| 最大输入字数 | {settings.max_input_chars} |
+| 单次最多核验主张数 | {settings.max_claims} |
+| 检索超时 | {settings.retrieval_timeout_seconds} 秒 |
+| 检索结果缓存 | {settings.retrieval_cache_hours} 小时 |
+| 保存检测记录 | {"是" if settings.save_runs else "否"} |
+| 数据目录 | `{settings.data_dir}` |
+"""
+        )
+    with st.expander("环境自检与配置方法"):
+        st.markdown(
+            "**一条命令做完整环境自检**（含依赖版本、配置、可选的外部 API 连通性）：\n"
+            "```powershell\n"
+            ".\\.venv\\Scripts\\python.exe scripts\\check_env.py --network\n"
+            "```\n"
+            "**接入真实大模型**：\n"
+            "```powershell\n"
+            "Copy-Item .env.example .env     # 然后编辑 .env，填入 VERIMIND_LLM_API_KEY\n"
+            "```\n"
+            "> `.env` 已被 `.gitignore` 排除，密钥不会进入 Git；界面上只显示脱敏值。"
+        )
+    st.caption(
+        "数据源边界：Crossref / OpenAlex / arXiv 提供的是**文献元数据、摘要与预印本检索**；"
+        "系统不据此声称已阅读全文，也不声称已验证文献的全部研究结论。"
+    )

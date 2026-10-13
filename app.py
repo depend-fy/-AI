@@ -79,45 +79,13 @@ with nav4:
     safe_page_link("pages/4_展示与答辩.py", label="展示与答辩", icon=None)
     st.caption("技术架构、实验报告与答辩材料")
 
-# ---------------------------------------------------------------- 核心逻辑
-col1, col2, col3 = st.columns(3)
+# ---------------------------------------------------------------- 首屏只留入口
+# 问题定义、技术路线、与常见做法的区别、核验流程、运行环境与配置明细
+# 已移至「展示与答辩」页的「答辩备查」档（见 verimind/ui/method_notes.py）。
+st.caption("技术路线、与常见做法的区别、核验流程与运行环境明细，见「展示与答辩 → 答辩备查」。")
+safe_page_link("pages/4_展示与答辩.py", label="查看方法与答辩材料", icon=None)
 
-with col1:
-    st.markdown("#### 问题定义")
-    st.markdown(
-        "大模型生成的内容可能存在：\n"
-        "- 事实错误\n"
-        "- 虚构文献 / 不存在的 DOI\n"
-        "- 引用与结论不匹配\n"
-        "- 数字、时间、人物、机构错误\n"
-        "- 逻辑推断过度\n"
-        "- 证据不足或来源互相冲突\n\n"
-        "而**同一个模型很难可靠地识别自己的错误**。"
-    )
 
-with col2:
-    st.markdown("#### 技术路线")
-    st.markdown(
-        "把「检测幻觉」拆成 7 个职责单一、可单独测试的环节：\n"
-        "1. 拆解为原子事实主张\n"
-        "2. 多角色协同分析\n"
-        "3. 检索可信外部来源\n"
-        "4. 匹配证据与主张\n"
-        "5. 规则裁决：状态 + 问题类型\n"
-        "6. 基于证据生成修正\n"
-        "7. 独立复核修正结果\n\n"
-        "每个环节的输入输出都是**结构化数据**。"
-    )
-
-with col3:
-    st.markdown("#### 与常见做法的区别")
-    st.markdown(
-        "- **证据可点击追溯**：报告中每条判断都能点开到真实来源\n"
-        "- **模型不下最终结论**：大模型只做结构化判断，状态由可解释的规则表裁决\n"
-        "- **无证据不判错**：把「证据不足 / 暂无法核验」当作一等公民状态\n"
-        "- **敢展示失败**：内置修正后独立复核，如实报告「修正失败 / 引入新错误」\n"
-        "- **不给假概率**：没有校准过的概率模型，就不显示貌似精确的「幻觉概率」"
-    )
 
 # ---------------------------------------------------------------- 状态说明
 st.divider()
@@ -133,28 +101,9 @@ with st.expander("查看 8 类问题类型"):
     for problem in ProblemType:
         st.markdown(f"- {problem.value}")
 
-# ---------------------------------------------------------------- 流程
-st.divider()
-st.markdown("#### 核验流程")
-st.markdown(
-    """
-```text
-用户输入文本
-   → ① 拆解为原子事实主张（带原文位置）
-   → ② 多角色协同：事实审查员提出核验问题
-   → ③ 外部检索：Crossref / OpenAlex / arXiv（免密钥公开接口）
-   → ④ 证据审查员：判断证据是支持 / 部分支持 / 反驳 / 无关
-   → ⑤ 规则裁决：6 种状态 + 8 类问题 + 严重度 + 缺失证据清单
-   → ⑥ 基于证据生成修正（无证据不许改事实）
-   → ⑦ 独立复核：原问题是否解决 / 是否引入新错误
-   → 可追溯检测报告（含未解决问题与系统局限）
-```
-"""
-)
 
-# ---------------------------------------------------------------- 导航
-st.divider()
-# ---------------------------------------------------------------- 一键演示
+
+# ---------------------------------------------------------------- 快速体验
 st.divider()
 st.markdown("#### 快速体验（内置样例）")
 st.caption(
@@ -200,53 +149,8 @@ st.caption(
     "若缓存已失效则会真实调用模型与外部检索，并在报告中如实记录次数与 token。"
 )
 
-st.markdown("#### 功能入口")
 
 
-# ---------------------------------------------------------------- 真实环境状态
-st.divider()
-st.markdown("#### 运行环境")
-
-env_col1, env_col2 = st.columns(2)
-with env_col1:
-    st.markdown(
-        f"""
-| 配置项 | 当前值 |
-| --- | --- |
-| 运行模式 | **{settings.run_mode.value}** |
-| 大模型 provider | `{settings.llm_provider}` |
-| 大模型 model | `{settings.llm_model}` |
-| API Key | `{settings.masked_api_key}` |
-| 单次模型调用上限 | {settings.llm_max_calls_per_run} 次 |
-| 文献检索 | {"已启用" if settings.retrieve_enabled else "已关闭"}（Crossref / OpenAlex / arXiv，免密钥） |
-"""
-    )
-with env_col2:
-    st.markdown(
-        f"""
-| 运行限制 | 当前值 |
-| --- | --- |
-| 最大输入字数 | {settings.max_input_chars} |
-| 单次最多核验主张数 | {settings.max_claims} |
-| 检索超时 | {settings.retrieval_timeout_seconds} 秒 |
-| 检索结果缓存 | {settings.retrieval_cache_hours} 小时 |
-| 保存检测记录 | {"是" if settings.save_runs else "否"} |
-| 数据目录 | `{settings.data_dir}` |
-"""
-    )
-
-with st.expander("环境自检与配置方法"):
-    st.markdown(
-        "**一条命令做完整环境自检**（含依赖版本、配置、可选的外部 API 连通性）：\n"
-        "```powershell\n"
-        ".\\.venv\\Scripts\\python.exe scripts\\check_env.py --network\n"
-        "```\n"
-        "**要接入真实大模型**（阶段 3 才需要）：\n"
-        "```powershell\n"
-        "Copy-Item .env.example .env     # 然后编辑 .env，填入 VERIMIND_LLM_API_KEY\n"
-        "```\n"
-        "> `.env` 已被 `.gitignore` 排除，密钥不会进入 Git；界面上只显示脱敏值。"
-    )
 
 # ---------------------------------------------------------------- 项目进度（诚实版）
 st.divider()
