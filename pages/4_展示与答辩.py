@@ -21,8 +21,10 @@ from verimind.core.errors import VeriMindError
 from verimind.evaluation.dataset import categories, load_golden_set
 from verimind.storage.repository import RunRepository
 from verimind.ui.theme import badge, render_config_warnings, render_run_mode_banner
+from verimind.ui.theme import inject_css, render_footer
 
 st.set_page_config(page_title="展示与答辩 · 智鉴 AI", page_icon="🎬", layout="wide")
+inject_css()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCS = {
@@ -208,3 +210,5 @@ with tabs[2]:
 
 with tabs[3]:
     render_doc(DOCS["experiment"], download_label="⬇️ 下载《实验报告与答辩材料》Markdown")
+
+render_footer()

@@ -25,8 +25,10 @@ from verimind.evaluation.runner import (
     run_evaluation,
 )
 from verimind.ui.theme import badge, render_config_warnings, render_run_mode_banner
+from verimind.ui.theme import inject_css, render_footer
 
 st.set_page_config(page_title="评测 · 智鉴 AI", page_icon="📈", layout="wide")
+inject_css()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
@@ -310,3 +312,5 @@ st.markdown(
 st.caption(
     "状态取值顺序：" + " → ".join(item.value for item in STATUS_DISPLAY_ORDER)
 )
+
+render_footer()

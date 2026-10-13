@@ -23,9 +23,11 @@ from verimind.ui.components import (
     render_run_info,
     render_stat_cards,
 )
-from verimind.ui.theme import render_status_legend, safe_page_link
+from verimind.ui.report_export import report_to_markdown
+from verimind.ui.theme import inject_css, render_footer, render_status_legend, safe_page_link
 
 st.set_page_config(page_title="检测报告 · 智鉴 AI", page_icon="📄", layout="wide")
+inject_css()
 
 settings = Settings()
 
@@ -86,6 +88,23 @@ if report is None:
 # ---------------------------------------------------------------- 报告头部
 render_report_header(report)
 render_stat_cards(report)
+
+# ---------------------------------------------------------------- 导出
+_export_left, _export_right = st.columns([1, 3])
+with _export_left:
+    st.download_button(
+        "⬇️ 下载完整报告",
+        data=report_to_markdown(report),
+        file_name=f"verimind-report-{report.run_id[:8]}.md",
+        mime="text/markdown",
+        key="download_report_md",
+        use_container_width=True,
+    )
+with _export_right:
+    st.caption(
+        "导出内容与页面**同源**（同一份数据对象）：逐条主张、命中规则、证据链接与留档路径、"
+        "修正与复核结论、系统局限、运行信息（含 token 与缓存命中）全都在里面，可直接归档或贴进材料。"
+    )
 
 st.divider()
 st.markdown("#### 📖 原文")
@@ -179,3 +198,4 @@ with note_col:
     )
 
 render_disclaimer(report)
+render_footer()

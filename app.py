@@ -24,6 +24,9 @@ from verimind.core.enums import (
 from verimind.ui.theme import (
     render_config_warnings,
     render_run_mode_banner,
+    inject_css,
+    hero,
+    render_footer,
     safe_page_link,
     status_badge_html,
 )
@@ -35,16 +38,24 @@ st.set_page_config(
 )
 
 settings = Settings()
+inject_css()
 
 # ---------------------------------------------------------------- 页头
-st.title("🔍 智鉴 AI（VeriMind AI）")
-st.markdown(
-    "**多模型协同的 AI 幻觉检测、证据溯源、错误归因与自动修正系统**（Demo 版，v"
-    f"{__version__}）"
-)
-st.caption(
+hero(
+    "🔍 智鉴 AI（VeriMind AI）",
+    "多模型协同的 <b>AI 幻觉检测、证据溯源、错误归因与自动修正</b>系统"
+    f"　<span style='color:#6b7480;font-size:0.9rem;'>Demo 版 v{__version__}</span><br>"
     "把「相信一个模型」换成「一条可审计的校验流水线」——"
-    "每条结论都能追问：你凭什么这么说？"
+    "每条结论都能追问：<b>你凭什么这么说？</b>",
+    [
+        "① 拆解主张",
+        "② 检索真实文献",
+        "③ 区分「存在」与「内容被支持」",
+        "④ 可解释规则裁决",
+        "⑤ 最小改动修正",
+        "⑥ 跨厂商独立复核",
+        "⑦ 20 条标注集评测",
+    ],
 )
 
 render_run_mode_banner(settings)
@@ -125,6 +136,52 @@ st.markdown(
 
 # ---------------------------------------------------------------- 导航
 st.divider()
+# ---------------------------------------------------------------- 一键演示
+st.divider()
+st.markdown("#### ⚡ 一键演示（不想先粘文本就点这个）")
+st.caption(
+    "点一下就跑完整流水线：主张拆解 → 检索 Crossref / OpenAlex → 规则裁决 → 最小改动修正 → "
+    "跨厂商独立复核。样例是「真实 DOI + 年份写错」，最能体现系统「抓到真错、也拒绝越界」的两面。"
+)
+if st.button("▶️ 跑一遍旗舰样例", key="one_click_demo", type="primary"):
+    import json as _json
+    from pathlib import Path as _Path
+
+    from verimind.core.errors import VeriMindError as _VErr
+    from verimind.core.pipeline import run_detection as _run_detection
+
+    _samples = _Path(__file__).resolve().parent / "examples" / "sample_inputs.jsonl"
+    _demo_text = ""
+    if _samples.exists():
+        for _line in _samples.read_text(encoding="utf-8").splitlines():
+            if _line.strip():
+                _item = _json.loads(_line)
+                if _item.get("id") == "real_doi_wrong_claim":
+                    _demo_text = str(_item["text"])
+                    break
+    if not _demo_text:
+        st.error("找不到样例文本 examples/sample_inputs.jsonl，请改用「检测工作台」。")
+    else:
+        with st.spinner("正在执行流水线（命中本地缓存时约 0.3 秒）…"):
+            try:
+                _report = _run_detection(_demo_text, settings=settings)
+            except _VErr as exc:
+                st.error(f"演示运行失败：{exc}")
+            else:
+                st.session_state["last_report"] = _report
+                st.session_state["last_run_id"] = _report.run_id
+                st.success(
+                    f"完成：{_report.stats.total_claims} 条主张，"
+                    f"判定有问题 {_report.stats.suspicious_claims} 条，"
+                    f"需关注 {_report.stats.flagged_claims} 条；"
+                    f"模型调用 {_report.metrics.llm_calls} 次（缓存命中 {_report.metrics.cache_hits} 次）。"
+                )
+                safe_page_link("pages/2_检测报告.py", label="查看这份报告", icon="📄")
+st.caption(
+    "该样例的模型与检索结果通常会命中本地缓存（**0 次计费调用**）；"
+    "若缓存已失效则会真实调用模型与外部检索，并在报告中如实记录次数与 token。"
+)
+
 st.markdown("#### 🚀 开始使用")
 nav1, nav2, nav3, nav4 = st.columns(4)
 with nav1:
@@ -197,19 +254,20 @@ st.markdown(
 | 阶段 2 | 基础检测流程（离线可跑） | ✅ 已完成 |
 | 阶段 3 | 接入真实大模型（交叉比对、缓存、成本统计） | ✅ 已完成 |
 | 阶段 4 | 文献检索与证据核验（Crossref / OpenAlex / arXiv） | ✅ 已完成 |
-| 阶段 5 | 修正与独立复核（角色 C / 角色 D） | ✅ 已完成（当前） |
-| 阶段 6 | 测试与 Demo 完善 | ⏳ 未开始 |
-| 阶段 7 | 比赛展示准备 | ⏳ 未开始 |
+| 阶段 5 | 修正与独立复核（角色 C 修正 / 角色 D 复核） | ✅ 已完成 |
+| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | ✅ 已完成 |
+| 阶段 7 | 比赛展示准备（演示脚本、架构、实验报告、答辩材料） | ✅ 已完成 |
 """
 )
 st.info(
-    "**当前能力（阶段 5）**：完整闭环已经打通——拆解主张 → 检索外部证据 → 判定问题 → "
-    "生成最小改动的修正建议 → **独立复核** → 只有复核通过的修改才会写进「修正后全文」。\n\n"
+    "**当前能力（阶段 7 完成）**：完整闭环已经打通——拆解主张 → 检索外部证据 → 可解释规则裁决 → "
+    "生成最小改动的修正建议 → **跨厂商独立复核** → 只有复核通过的修改才会写进「修正后全文」；"
+    "并在 20 条人工标注集上给出真实指标与失败案例。\n\n"
     "**两条关键边界**：「文献是真的」与「文献真的这么说」是两个问题；"
     "「改了」与「改对了」也是两个问题。修正是**代码级的保守**——"
     "编造的数字会被确定性检查拦下，复核未通过的修改一律不改。\n\n"
-    "**尚未接入**：论文全文阅读（现在最多读到摘要）、中文文献检索（数据源没有公开 API）、"
-    "非学术事实核验（需要付费检索服务）；人工标注集上的指标要等阶段 6。",
+    "**尚未做到**：论文全文阅读（现在最多读到摘要）、中文文献检索（数据源没有公开 API）、"
+    "非学术事实核验（需要付费检索服务）；标注集仍有 16 条待人工确认。",
     icon="ℹ️",
 )
 
@@ -218,3 +276,5 @@ st.caption(
     "免责声明：本项目为 Demo，用于方法验证与竞赛演示；系统输出是辅助判断，"
     "不构成学术结论、法律意见或事实认定的最终依据。"
 )
+
+render_footer()

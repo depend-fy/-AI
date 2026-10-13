@@ -216,3 +216,64 @@ def placeholder_page(
 
     st.subheader("依赖条件")
     st.markdown(dependency)
+
+
+# --------------------------------------------------------------------------
+# 成品化：统一视觉、页面头、页脚
+# --------------------------------------------------------------------------
+_CSS = """
+<style>
+  /* 让页面更接近"成品"而不是 demo：收紧默认间距、统一卡片圆角 */
+  .block-container {padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px;}
+  div[data-testid="stMetric"] {
+      background: #fbfcfd; border: 1px solid #e6e9ee; border-radius: 10px;
+      padding: 10px 14px;
+  }
+  div[data-testid="stMetricLabel"] p {font-size: 0.82rem; color: #5f6b7a;}
+  .vm-hero {
+      border: 1px solid #dfe4ea; border-left: 6px solid #1f4e79; border-radius: 12px;
+      padding: 20px 24px; background: linear-gradient(180deg, #f7fafd 0%, #ffffff 100%);
+      margin-bottom: 6px;
+  }
+  .vm-hero h1 {margin: 0 0 6px 0; font-size: 1.75rem; color: #14314f;}
+  .vm-hero p {margin: 0; color: #445; font-size: 0.98rem; line-height: 1.65;}
+  .vm-footer {
+      margin-top: 28px; padding-top: 14px; border-top: 1px solid #e6e9ee;
+      color: #6b7480; font-size: 0.82rem; line-height: 1.7;
+  }
+  .vm-step {
+      display: inline-block; padding: 3px 10px; margin: 0 6px 6px 0; border-radius: 999px;
+      background: #eef3fb; border: 1px solid #c8d8ee; color: #1f4e79; font-size: 0.82rem;
+  }
+</style>
+"""
+
+
+def inject_css() -> None:
+    """注入统一的样式（每个页面开头调用一次）。"""
+    st.markdown(_CSS, unsafe_allow_html=True)
+
+
+def hero(title: str, subtitle: str, points: list[str] | None = None) -> None:
+    """页面顶部的"产品化"标题区。"""
+    body = f'<p>{subtitle}</p>'
+    if points:
+        chips = "".join(f'<span class="vm-step">{item}</span>' for item in points)
+        body += f'<div style="margin-top:10px;">{chips}</div>'
+    st.markdown(
+        f'<div class="vm-hero"><h1>{title}</h1>{body}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_footer(*, extra: str | None = None) -> None:
+    """统一的页脚：免责声明 + 诚实边界。每一页都要有，不能只在报告页写。"""
+    notes = [
+        "本系统给出的是**基于可检索公开证据的辅助判断**，不是学术结论、法律意见或事实认定的最终依据。",
+        "「文献是真的」与「文献真的这么说」是两个问题；「改了」与「改对了」也是两个问题——系统对后者一律要求独立复核。",
+        "证据不足或无法核验时会明确标注，不会给出猜测性结论，也不提供未经校准的「幻觉概率」。",
+    ]
+    if extra:
+        notes.append(extra)
+    items = "".join(f"<div>· {item}</div>" for item in notes)
+    st.markdown(f'<div class="vm-footer">{items}</div>', unsafe_allow_html=True)

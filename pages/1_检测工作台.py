@@ -22,8 +22,10 @@ from verimind.ui.theme import (
     safe_page_link,
     status_badge_html,
 )
+from verimind.ui.theme import inject_css, render_footer
 
 st.set_page_config(page_title="检测工作台 · 智鉴 AI", page_icon="🧪", layout="wide")
+inject_css()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLES_PATH = PROJECT_ROOT / "examples" / "sample_inputs.jsonl"
@@ -178,3 +180,5 @@ with st.expander("这一版（阶段 3）到底做了什么、没做什么", exp
         "**为什么现在报告里没有「已核实」**\n"
         "因为还没有查过任何外部来源。没有证据就说「已核实」，是本项目最不能接受的事。"
     )
+
+render_footer()

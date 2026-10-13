@@ -45,19 +45,22 @@ def test_home_page_shows_real_project_info() -> None:
     app = AppTest.from_file(str(PROJECT_ROOT / "app.py"), default_timeout=120)
     app.run()
 
-    titles = [element.value for element in app.title]
-    assert any("智鉴 AI" in title for title in titles)
+    assert not app.exception
 
-    # 首页必须如实声明当前运行模式（具体是哪种取决于 .env 配置，因此只断言"明确标注了"）
+    # 首页标题改用自定义 hero 渲染（不再用 st.title），因此断言 Markdown 内容
     markdown_text = "\n".join(element.value for element in app.markdown)
+    assert "智鉴 AI" in markdown_text
     assert "当前运行模式" in markdown_text
     assert any(
         mode in markdown_text for mode in ("离线模拟", "单模型多角色模拟", "多模型协同")
     ), "运行模式必须是三种明确模式之一，不能含糊"
 
-    # 首页必须如实声明当前能力边界（阶段 2：未接入外部检索与修正复核）
+    # 首页必须如实声明当前能力边界
     info_text = "\n".join(element.value for element in app.info)
-    assert "尚未接入" in info_text
+    assert "尚未做到" in info_text, "首页必须如实声明当前做不到什么"
+
+    # 成品体验：首页要有一键演示入口（不用先粘文本也能看到完整效果）
+    assert any(button.key == "one_click_demo" for button in app.button)
 
 
 def test_evaluation_page_shows_the_labeled_dataset() -> None:
