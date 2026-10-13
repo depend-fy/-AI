@@ -130,7 +130,7 @@ def test_report_page_hides_report_when_nothing_selected() -> None:
 
 def test_claim_consensus_is_derived_from_existing_role_data() -> None:
     """共识程度必须由**已有的**角色立场与证据状态推出，不得引入任何概率数字。"""
-    from verimind.core.enums import RoleName, RoleStance, VerificationStatus
+    from verimind.core.enums import EvidenceSource, RoleName, RoleStance, VerificationStatus
     from verimind.core.schemas import RolePosition, SearchRecord, SearchTrace, VerificationResult
     from verimind.ui.components import claim_consensus
 
@@ -143,7 +143,7 @@ def test_claim_consensus_is_derived_from_existing_role_data() -> None:
             conclusion="测试结论",
         )
 
-    trace = SearchTrace(records=[SearchRecord(source=None, query="测试", status="检索成功")])
+    trace = SearchTrace(records=[SearchRecord(source=EvidenceSource.CROSSREF, query="测试", status="检索成功")])
 
     # 只有规则层结论，没有角色意见
     alone = VerificationResult(
