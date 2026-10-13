@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -177,12 +178,46 @@ if run_clicked:
         st.session_state["evaluation_report"] = report
         st.session_state.setdefault("evaluation_history", []).append(report)
 
-report: EvaluationReport | None = st.session_state.get("evaluation_report")
+# ---------------------------------------------------------------- 已保存的结果
+EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
+saved_files = sorted(EVALUATIONS_DIR.glob("*.json")) if EVALUATIONS_DIR.exists() else []
+
+st.divider()
+st.markdown("#### 🗂️ 查看评测结果")
+SESSION_OPTION = "（本次会话刚运行的）"
+source_options = ([SESSION_OPTION] if st.session_state.get("evaluation_report") else []) + [
+    item.name for item in saved_files
+]
+if source_options:
+    st.caption(
+        "evaluations/ 目录下的每一份 JSON 都是一次真实运行的存档，可以直接查看，不需要重跑（也就不会花钱）。"
+    )
+    source = st.selectbox("数据来源", source_options, index=0, key="evaluation_source")
+else:
+    source = SESSION_OPTION
+
+report: EvaluationReport | None = None
+if source == SESSION_OPTION:
+    report = st.session_state.get("evaluation_report")
+else:
+    try:
+        raw = json.loads((EVALUATIONS_DIR / source).read_text(encoding="utf-8"))
+        report = EvaluationReport.model_validate(raw)
+    except Exception as exc:  # noqa: BLE001 - 存档损坏时给出可读提示，不让整页崩掉
+        st.error(f"读取评测存档失败：{exc}")
+        report = None
 
 # ---------------------------------------------------------------- 结果
 if report is None:
     st.info("还没有评测结果。选择配置后点「运行评测」即可——先跑 3–5 条小样本确认流程正常，再跑全量。")
     st.stop()
+
+if report.metric("total_llm_calls") == 0 and settings.llm_provider != "mock":
+    st.warning(
+        "这份存档的模型调用为 **0 次**（全部命中本地缓存），因此「平均耗时」与「token」两项反映的是缓存路径，"
+        "不代表冷启动成本。冷启动实测数据见 docs/07-experiment-and-defense.md。",
+        icon="ℹ️",
+    )
 
 st.divider()
 st.markdown(f"#### 📊 评测结果：{report.baseline}")

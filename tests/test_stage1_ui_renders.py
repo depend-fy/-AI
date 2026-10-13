@@ -85,7 +85,14 @@ def test_evaluation_page_shows_the_labeled_dataset() -> None:
 
     labels = [element.label for element in app.metric]
     assert "用例总数" in labels
-    assert "检测精确率" not in labels, "没点运行之前不应出现任何指标数字"
+
+    # evaluations/ 下有存档时，页面可以直接展示而不必重跑（省钱）；
+    # 没有任何存档时才要求"不出现指标数字"。
+    has_saved = (PROJECT_ROOT / "evaluations").exists() and any(
+        (PROJECT_ROOT / "evaluations").glob("*.json")
+    )
+    if not has_saved:
+        assert "检测精确率" not in labels, "没有存档、也没点运行时不应出现任何指标数字"
 
     assert any(button.key == "run_evaluation" for button in app.button)
 

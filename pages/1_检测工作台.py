@@ -90,7 +90,26 @@ over_limit = char_count > settings.max_input_chars
 
 count_col, action_col = st.columns([3, 1])
 with count_col:
-    st.caption(f"已输入 {char_count} / {settings.max_input_chars} 字")
+    reviewer_label = (
+        f"{settings.llm_reviewer_provider}/{settings.llm_reviewer_model}"
+        if settings.reviewer_is_distinct
+        else "与主模型相同"
+    )
+    st.caption(
+        f"已输入 {char_count} / {settings.max_input_chars} 字"
+        f"　｜　引擎：{settings.llm_provider}/{settings.llm_model}"
+        f"　｜　复核：{reviewer_label}"
+    )
+    st.caption(
+        "运行前预估：每条主张约 **2–4 次模型调用**（主张拆解 / 事实审查 / 可能的证据审查、修正与复核）"
+        "＋若干次外部检索。**同一段文本重复检测会命中本地缓存（0 次计费调用）**。"
+        f"需要更长的输入时，在 `.env` 里设置 `VERIMIND_MAX_INPUT_CHARS`（当前 {settings.max_input_chars}）。"
+    )
+    if st.button("🧹 清空文本", key="clear_workbench"):
+        st.session_state["workbench_text"] = ""
+        st.session_state["workbench_loaded"] = None
+        st.session_state["workbench_note"] = ""
+        st.rerun()
 
 with action_col:
     run_clicked = st.button("🚀 开始检测", type="primary", key="run_detection", use_container_width=True)

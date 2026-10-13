@@ -115,7 +115,9 @@ def _outcome(case: GoldenCase, report: DetectionReport) -> CaseOutcome:
         elif item.url:
             traceable += 1
 
-    corrected = report.corrected_text or ""
+    # 没有任何修正被采用时 corrected_text 是 None：此时必须按**原文**来判定残留错误，
+    # 否则被当成空字符串，"不应当包含某个错误值"会被空文本白白满足，指标虚高。
+    corrected = report.corrected_text or report.input_text
     contains_ok = all(token in corrected for token in case.expect_correction_contains) if case.expect_correction_contains else True
     excludes_ok = not any(token in corrected for token in case.expect_correction_excludes)
 
