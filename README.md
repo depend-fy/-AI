@@ -27,6 +27,8 @@
 | [`docs/07-architecture-and-innovation.md`](docs/07-architecture-and-innovation.md) | 技术架构图 + 11 步数据流 + **五个核心创新点** + 角色分工 |
 | [`docs/07-experiment-and-defense.md`](docs/07-experiment-and-defense.md) | 实验设置与真实结果、**10 条局限**、后续规划、**12 个答辩 Q&A**、讲稿要点 |
 
+> | [docs/智鉴AI-演示PPT.pptx](docs/智鉴AI-演示PPT.pptx) | **15 页可编辑演示 PPT**：真实数据表格、失败案例、局限页，并在对应页标出 11 张截图的插入位置（由 scripts/make_ppt.py 可重新生成） |
+
 > 这三份材料也可以**在应用里直接浏览**：首页导航 → **🎬 展示与答辩**。
 > 该页面直接渲染 docs/ 下的 Markdown（单一数据源，改文档即改网页），
 > 并附带**实时状态**：当前运行模式与引擎、标注集人工确认进度、最近检测记录，以及「已能做什么 / 还不能做什么」。
