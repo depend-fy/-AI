@@ -313,7 +313,7 @@ def render_claim_card(
 # ==========================================================================
 def render_correction_section(report: DetectionReport) -> None:
     """修正建议与独立复核：修正前后对比 + 五项检查 + 被拒绝的修改。"""
-    st.markdown("#### ✏️ 修正建议与独立复核")
+    st.markdown("#### 修正建议与独立复核")
     if not report.corrections:
         st.caption(
             "本次没有生成修正建议——修正只针对**已被判定有问题**的主张；"
@@ -339,7 +339,7 @@ def render_correction_section(report: DetectionReport) -> None:
 
     for correction in report.corrections:
         accepted = correction.correction_id in applied
-        icon = "✅" if accepted else "❌"
+        icon = "已采用" if accepted else "未采用"
         with st.expander(
             f"{icon} {correction.correction_id} ｜ {correction.change_type.value} ｜ "
             f"{correction.original_span.text[:28]}"
@@ -415,7 +415,7 @@ def render_correction_section(report: DetectionReport) -> None:
             )
             st.markdown("**五项检查**")
             for check in review.checks:
-                mark = "✅" if check.passed else "❌"
+                mark = "通过" if check.passed else "未通过"
                 st.markdown(f"- {mark} {check.check.value}：{check.detail}")
             if review.unresolved:
                 st.markdown("**仍未解决 / 需要人工确认**")
@@ -455,12 +455,12 @@ def render_cross_check(report: DetectionReport) -> None:
     这一节存在的意义是**暴露分歧**，而不是掩盖分歧。
     一个小系统如果连自己的两个部件意见不一致都不敢说，那它给出的"结论"也没什么可信度。
     """
-    st.markdown("#### 🔍 引擎交叉比对（规则引擎 vs 大模型）")
+    st.markdown("#### 引擎交叉比对（规则引擎与模型）")
     if not report.cross_check_notes:
         st.caption("本次没有可展示的交叉比对信息。")
         return
     st.caption(
-        "规则引擎与真实模型分别独立拆解同一段文本，下面是两者的差异与分歧全记录"
+        "规则引擎与模型分别独立拆解同一段文本，以下为两者差异与分歧的完整记录。"
         "（不做取舍、不做美化）。"
     )
     for note in report.cross_check_notes:
@@ -496,7 +496,7 @@ def render_limitations(report: DetectionReport) -> None:
     """系统局限：必须显著展示，不能藏在角落里。"""
     if not report.limitations:
         return
-    st.markdown("#### ⚠️ 系统局限（本次检测不能做什么）")
+    st.markdown("#### 系统局限（本次检测的适用范围）")
     for item in report.limitations:
         st.markdown(f"- {item}")
 

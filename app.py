@@ -42,11 +42,11 @@ inject_css()
 
 # ---------------------------------------------------------------- 页头
 hero(
-    "🔍 智鉴 AI（VeriMind AI）",
+    "智鉴 AI（VeriMind AI）",
     "多模型协同的 <b>AI 幻觉检测、证据溯源、错误归因与自动修正</b>系统"
     f"　<span style='color:#6b7480;font-size:0.9rem;'>Demo 版 v{__version__}</span><br>"
-    "把「相信一个模型」换成「一条可审计的校验流水线」——"
-    "每条结论都能追问：<b>你凭什么这么说？</b>",
+    "对文本中的事实性论断进行<b>证据核验、错误归因与可复核的修正建议</b>。"
+    "每条结论均附外部证据与判定规则，可逐条追溯。",
     [
         "① 拆解主张",
         "② 检索真实文献",
@@ -61,11 +61,27 @@ hero(
 render_run_mode_banner(settings)
 render_config_warnings(settings)
 
+# ---------------------------------------------------------------- 首屏入口
+st.markdown("#### 开始核验")
+nav1, nav2, nav3, nav4 = st.columns(4)
+with nav1:
+    safe_page_link("pages/1_检测工作台.py", label="检测工作台", icon=None)
+    st.caption("粘贴待核验文本，启动核验")
+with nav2:
+    safe_page_link("pages/2_检测报告.py", label="检测报告", icon=None)
+    st.caption("查看主张、证据与修正建议")
+with nav3:
+    safe_page_link("pages/3_评测.py", label="评测", icon=None)
+    st.caption("人工标注测试集上的实测指标")
+with nav4:
+    safe_page_link("pages/4_展示与答辩.py", label="展示与答辩", icon=None)
+    st.caption("技术架构、实验报告与答辩材料")
+
 # ---------------------------------------------------------------- 核心逻辑
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("#### ❗ 要解决的问题")
+    st.markdown("#### 问题定义")
     st.markdown(
         "大模型生成的内容可能存在：\n"
         "- 事实错误\n"
@@ -78,7 +94,7 @@ with col1:
     )
 
 with col2:
-    st.markdown("#### 🔧 我们的做法")
+    st.markdown("#### 技术路线")
     st.markdown(
         "把「检测幻觉」拆成 7 个职责单一、可单独测试的环节：\n"
         "1. 拆解为原子事实主张\n"
@@ -92,7 +108,7 @@ with col2:
     )
 
 with col3:
-    st.markdown("#### ⭐ 与常见做法的区别")
+    st.markdown("#### 与常见做法的区别")
     st.markdown(
         "- **证据可点击追溯**：报告中每条判断都能点开到真实来源\n"
         "- **模型不下最终结论**：大模型只做结构化判断，状态由可解释的规则表裁决\n"
@@ -103,7 +119,7 @@ with col3:
 
 # ---------------------------------------------------------------- 状态说明
 st.divider()
-st.markdown("#### 📊 报告中的 6 种核验状态")
+st.markdown("#### 六类核验状态")
 st.caption(
     f"每种状态都有明确含义，并且必须给出理由与证据（共 {EXPECTED_STATUS_COUNT} 种状态、"
     f"{EXPECTED_PROBLEM_TYPE_COUNT} 类问题类型）。"
@@ -117,7 +133,7 @@ with st.expander("查看 8 类问题类型"):
 
 # ---------------------------------------------------------------- 流程
 st.divider()
-st.markdown("#### 🔄 检测流程（闭环）")
+st.markdown("#### 核验流程")
 st.markdown(
     """
 ```text
@@ -138,12 +154,12 @@ st.markdown(
 st.divider()
 # ---------------------------------------------------------------- 一键演示
 st.divider()
-st.markdown("#### ⚡ 一键演示（不想先粘文本就点这个）")
+st.markdown("#### 快速体验（内置样例）")
 st.caption(
-    "点一下就跑完整流水线：主张拆解 → 检索 Crossref / OpenAlex → 规则裁决 → 最小改动修正 → "
-    "跨厂商独立复核。样例是「真实 DOI + 年份写错」，最能体现系统「抓到真错、也拒绝越界」的两面。"
+    "执行完整流程：论断拆分 → 外部检索（Crossref / OpenAlex） → 规则裁决 → 修正建议 → 独立复核。"
+    "内置样例为「真实 DOI + 与注册记录不符的年份」。"
 )
-if st.button("▶️ 跑一遍旗舰样例", key="one_click_demo", type="primary"):
+if st.button("执行样例核验", key="one_click_demo", type="primary"):
     import json as _json
     from pathlib import Path as _Path
 
@@ -176,30 +192,18 @@ if st.button("▶️ 跑一遍旗舰样例", key="one_click_demo", type="primary
                     f"需关注 {_report.stats.flagged_claims} 条；"
                     f"模型调用 {_report.metrics.llm_calls} 次（缓存命中 {_report.metrics.cache_hits} 次）。"
                 )
-                safe_page_link("pages/2_检测报告.py", label="查看这份报告", icon="📄")
+                safe_page_link("pages/2_检测报告.py", label="查看这份报告", icon=None)
 st.caption(
     "该样例的模型与检索结果通常会命中本地缓存（**0 次计费调用**）；"
     "若缓存已失效则会真实调用模型与外部检索，并在报告中如实记录次数与 token。"
 )
 
-st.markdown("#### 🚀 开始使用")
-nav1, nav2, nav3, nav4 = st.columns(4)
-with nav1:
-    safe_page_link("pages/1_检测工作台.py", label="检测工作台", icon="🧪")
-    st.caption("粘贴待核验文本，启动检测")
-with nav2:
-    safe_page_link("pages/2_检测报告.py", label="检测报告", icon="📄")
-    st.caption("查看主张、证据、问题与修正")
-with nav3:
-    safe_page_link("pages/3_评测.py", label="评测", icon="📈")
-    st.caption("在人工标注集上的真实指标（阶段 6）")
-with nav4:
-    safe_page_link("pages/4_展示与答辩.py", label="展示与答辩", icon="🎬")
-    st.caption("演示脚本 / 架构与创新点 / 实验报告与答辩（阶段 7）")
+st.markdown("#### 功能入口")
+
 
 # ---------------------------------------------------------------- 真实环境状态
 st.divider()
-st.markdown("#### 🖥️ 当前环境与配置（真实读取，非示意）")
+st.markdown("#### 运行环境")
 
 env_col1, env_col2 = st.columns(2)
 with env_col1:
@@ -244,19 +248,19 @@ with st.expander("环境自检与配置方法"):
 
 # ---------------------------------------------------------------- 项目进度（诚实版）
 st.divider()
-st.markdown("#### 🗺️ 项目进度（如实标注）")
+st.markdown("#### 项目进度")
 st.markdown(
     """
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
-| 阶段 0 | 需求冻结与技术方案 | ✅ 已完成 |
-| 阶段 1 | 开发环境与项目骨架 | ✅ 已完成 |
-| 阶段 2 | 基础检测流程（离线可跑） | ✅ 已完成 |
-| 阶段 3 | 接入真实大模型（交叉比对、缓存、成本统计） | ✅ 已完成 |
-| 阶段 4 | 文献检索与证据核验（Crossref / OpenAlex / arXiv） | ✅ 已完成 |
-| 阶段 5 | 修正与独立复核（角色 C 修正 / 角色 D 复核） | ✅ 已完成 |
-| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | ✅ 已完成 |
-| 阶段 7 | 比赛展示准备（演示脚本、架构、实验报告、答辩材料） | ✅ 已完成 |
+| 阶段 0 | 需求冻结与技术方案 | 已完成 |
+| 阶段 1 | 开发环境与项目骨架 | 已完成 |
+| 阶段 2 | 基础检测流程（离线可跑） | 已完成 |
+| 阶段 3 | 接入真实大模型（交叉比对、缓存、成本统计） | 已完成 |
+| 阶段 4 | 文献检索与证据核验（Crossref / OpenAlex / arXiv） | 已完成 |
+| 阶段 5 | 修正与独立复核（角色 C 修正 / 角色 D 复核） | 已完成 |
+| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | 已完成 |
+| 阶段 7 | 比赛展示准备（演示脚本、架构、实验报告、答辩材料） | 已完成 |
 """
 )
 st.info(
@@ -268,7 +272,6 @@ st.info(
     "编造的数字会被确定性检查拦下，复核未通过的修改一律不改。\n\n"
     "**尚未做到**：论文全文阅读（现在最多读到摘要）、中文文献检索（数据源没有公开 API）、"
     "非学术事实核验（需要付费检索服务）；标注集仍有 16 条待人工确认。",
-    icon="ℹ️",
 )
 
 st.divider()

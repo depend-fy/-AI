@@ -36,7 +36,7 @@ GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
 
 settings = Settings()
 
-st.title("🎬 展示与答辩")
+st.title("展示与答辩")
 st.caption(
     "比赛用的演示脚本、技术架构与创新点、实验报告与答辩材料。"
     "所有数字都来自真实运行；局限与未完成事项也一并写在这里。"
@@ -47,10 +47,10 @@ render_config_warnings(settings)
 
 tabs = st.tabs(
     [
-        "📌 实时状态",
-        "🏗️ 架构与创新点",
-        "🎬 演示脚本",
-        "📊 实验报告与答辩",
+        "实时状态",
+        "架构与创新点",
+        "演示脚本",
+        "实验报告与答辩",
     ]
 )
 
@@ -79,7 +79,7 @@ def render_doc(path: Path, *, download_label: str) -> None:
 # ① 实时状态
 # ==========================================================================
 with tabs[0]:
-    st.markdown("#### 🖥️ 当前配置（真实读取，非示意）")
+    st.markdown("#### 运行配置")
     engine_cols = st.columns(4)
     engine_cols[0].metric("运行模式", settings.run_mode.value)
     engine_cols[1].metric("主模型", f"{settings.llm_provider}")
@@ -94,17 +94,15 @@ with tabs[0]:
             f"独立复核已启用：修正员用 `{settings.llm_provider}/{settings.llm_model}`，"
             f"复核员用 `{settings.llm_reviewer_provider}/{settings.llm_reviewer_model}`——"
             "**改的人**与**检查改得对不对的人**不是同一个模型。",
-            icon="✅",
         )
     else:
         st.warning(
             "尚未配置独立的复核模型：复核由主模型兼任，报告中会如实标注「复核独立性有限」。"
             "在 `.env` 中配置 `VERIMIND_LLM_REVIEWER_*` 即可升级为多模型协同。",
-            icon="⚠️",
         )
 
     st.divider()
-    st.markdown("#### 📚 人工标注测试集的确认进度")
+    st.markdown("#### 人工标注测试集确认进度")
     try:
         cases = load_golden_set(GOLDEN_PATH)
     except (FileNotFoundError, ValueError) as exc:
@@ -133,11 +131,10 @@ with tabs[0]:
                 "在**全部**用例经人工确认之前，评测页与实验报告里的指标都只能称为"
                 "「AI 起草标注上的初步结果」。确认入口：`examples/golden_set_review.csv`"
                 "（Excel 直接打开，填最后两列）。",
-                icon="ℹ️",
             )
 
     st.divider()
-    st.markdown("#### 🗂️ 最近的检测记录（来自本地数据库）")
+    st.markdown("#### 最近检测记录")
     try:
         repository = RunRepository(settings.sqlite_path)
         summaries = repository.list_recent(limit=8)
@@ -173,7 +170,7 @@ with tabs[0]:
         st.caption("还没有检测记录。到「检测工作台」跑一次就会出现在这里。")
 
     st.divider()
-    st.markdown("#### ✅ 已经能做什么 / 还不能做什么")
+    st.markdown("#### 能力范围")
     left, right = st.columns(2)
     with left:
         st.markdown(

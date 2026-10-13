@@ -31,7 +31,7 @@ inject_css()
 
 settings = Settings()
 
-st.title("📄 检测报告")
+st.title("检测报告")
 st.caption(
     "报告中的每一条判断都能追问：依据是什么、命中了哪条规则、还缺什么证据。"
 )
@@ -80,9 +80,8 @@ else:
 if report is None:
     st.info(
         "还没有可查看的检测报告。请先到「检测工作台」输入文本并点击「开始检测」。",
-        icon="🧪",
     )
-    safe_page_link("pages/1_检测工作台.py", label="前往检测工作台 →", icon="🧪")
+    safe_page_link("pages/1_检测工作台.py", label="前往检测工作台", icon=None)
     st.stop()
 
 # ---------------------------------------------------------------- 报告头部
@@ -107,7 +106,7 @@ with _export_right:
     )
 
 st.divider()
-st.markdown("#### 📖 原文")
+st.markdown("#### 原文")
 with st.container():
     st.caption("高亮部分为系统识别出的、需要核验的关键片段。")
     from verimind.ui.components import render_text_panel
@@ -134,7 +133,7 @@ flagged.sort(key=lambda pair: (_severity_rank.get(pair[1].severity, 9), pair[0].
 
 # ---------------------------------------------------------------- 需关注
 st.divider()
-st.markdown(f"#### ⚠️ 需关注的主张（{len(flagged)} 条）")
+st.markdown(f"#### 需关注的主张（{len(flagged)} 条）")
 if not flagged:
     st.success(
         "本次检测没有发现「已经可以确认的问题」或「明显疑点」。"
@@ -150,7 +149,7 @@ else:
 
 # ---------------------------------------------------------------- 尚未核验
 st.divider()
-st.markdown(f"#### 🔎 尚未核验的主张（{len(unverified)} 条）")
+st.markdown(f"#### 尚未核验的主张（{len(unverified)} 条）")
 if unverified:
     st.caption(
         "这些主张本身没有发现疑点，只是**阶段 2 还没有接入外部检索**，因此无法核实。"
@@ -175,7 +174,7 @@ render_cross_check(report)
 
 # ---------------------------------------------------------------- 状态图例
 st.divider()
-st.markdown("#### 🎨 状态含义对照")
+st.markdown("#### 状态含义对照")
 render_status_legend()
 
 # ---------------------------------------------------------------- 局限与运行信息

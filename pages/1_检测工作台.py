@@ -46,7 +46,7 @@ def load_samples() -> list[dict[str, str]]:
 
 settings = Settings()
 
-st.title("🧪 检测工作台")
+st.title("检测工作台")
 st.caption(
     "粘贴一段需要核验的 AI 生成内容，系统会把它拆解为可单独核验的事实主张，"
     "并给出每一条的核验状态、判断理由与「还缺什么证据」。"
@@ -58,7 +58,7 @@ render_config_warnings(settings)
 # ---------------------------------------------------------------- 示例文本
 samples = load_samples()
 if samples:
-    st.markdown("#### 📋 一键载入示例文本")
+    st.markdown("#### 载入示例文本")
     columns = st.columns(len(samples))
     for column, sample in zip(columns, samples):
         with column:
@@ -72,11 +72,10 @@ if samples:
         st.info(
             f"已载入示例：**{st.session_state['workbench_loaded']}**。"
             "可以直接点「开始检测」，也可以先修改文本。",
-            icon="✅",
         )
 
 # ---------------------------------------------------------------- 输入
-st.markdown("#### ✍️ 待核验文本")
+st.markdown("#### 待核验文本")
 text = st.text_area(
     "待核验文本",
     key="workbench_text",
@@ -105,14 +104,14 @@ with count_col:
         "＋若干次外部检索。**同一段文本重复检测会命中本地缓存（0 次计费调用）**。"
         f"需要更长的输入时，在 `.env` 里设置 `VERIMIND_MAX_INPUT_CHARS`（当前 {settings.max_input_chars}）。"
     )
-    if st.button("🧹 清空文本", key="clear_workbench"):
+    if st.button("清空输入", key="clear_workbench"):
         st.session_state["workbench_text"] = ""
         st.session_state["workbench_loaded"] = None
         st.session_state["workbench_note"] = ""
         st.rerun()
 
 with action_col:
-    run_clicked = st.button("🚀 开始检测", type="primary", key="run_detection", width="stretch")
+    run_clicked = st.button("开始核验", type="primary", key="run_detection", width="stretch")
 
 if over_limit:
     st.error(f"文本超过 {settings.max_input_chars} 字的限制，请缩短后重试。")
@@ -154,7 +153,7 @@ if run_clicked:
 last_report: DetectionReport | None = st.session_state.get("last_report")
 if last_report is not None:
     st.divider()
-    st.markdown("#### 📊 本次检测结果摘要")
+    st.markdown("#### 核验结果摘要")
     st.caption(f"运行 ID：`{last_report.run_id}`")
 
     stats = last_report.stats
@@ -172,7 +171,7 @@ if last_report is not None:
         unsafe_allow_html=True,
     )
 
-    safe_page_link("pages/2_检测报告.py", label="查看完整检测报告 →", icon="📄")
+    safe_page_link("pages/2_检测报告.py", label="查看完整报告", icon=None)
     st.caption(
         "提示：报告页也可以打开历史记录（保存在本地 `data/verimind.db`，不会上传任何地方）。"
     )

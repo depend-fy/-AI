@@ -39,27 +39,27 @@ class StatusStyle:
 #:       蓝灰=证据不足；灰色=查不到。颜色只表达"证据强度"，不表达"模型信心"。
 STATUS_STYLE: dict[VerificationStatus, StatusStyle] = {
     VerificationStatus.VERIFIED: StatusStyle(
-        icon="✅", fg="#1a7f37", bg="#e9f7ee", border="#a7e0b8",
+        icon="●", fg="#1a7f37", bg="#e9f7ee", border="#a7e0b8",
         desc="现有证据能够支持该主张。",
     ),
     VerificationStatus.PARTIALLY_SUPPORTED: StatusStyle(
-        icon="🟡", fg="#a15c07", bg="#fff6e5", border="#f2d08a",
+        icon="●", fg="#a15c07", bg="#fff6e5", border="#f2d08a",
         desc="证据只支持主张的一部分（例如方向对、数字不对）。",
     ),
     VerificationStatus.CONTRADICTED: StatusStyle(
-        icon="🔴", fg="#b42318", bg="#fdecea", border="#f3b3ad",
+        icon="●", fg="#b42318", bg="#fdecea", border="#f3b3ad",
         desc="找到可信证据与该主张冲突。",
     ),
     VerificationStatus.SOURCE_CONFLICT: StatusStyle(
-        icon="🟠", fg="#c2410c", bg="#fff1e6", border="#f5c09a",
+        icon="●", fg="#c2410c", bg="#fff1e6", border="#f5c09a",
         desc="不同可信来源之间给出了不一致的信息。",
     ),
     VerificationStatus.INSUFFICIENT: StatusStyle(
-        icon="🔵", fg="#3a5a8c", bg="#eef3fb", border="#b9cbe8",
+        icon="●", fg="#3a5a8c", bg="#eef3fb", border="#b9cbe8",
         desc="已有材料不足以支持或反驳该主张。",
     ),
     VerificationStatus.UNVERIFIABLE: StatusStyle(
-        icon="⚪", fg="#5f6b7a", bg="#f4f5f7", border="#d5d9df",
+        icon="●", fg="#5f6b7a", bg="#f4f5f7", border="#d5d9df",
         desc="当前检索条件下无法作出可靠判断（注意：这不等于「错误」）。",
     ),
 }
@@ -81,28 +81,28 @@ SEVERITY_STYLE: dict[Severity, SeverityStyle] = {
 
 
 STANCE_ICON: dict[RoleStance, str] = {
-    RoleStance.SUPPORT: "👍",
-    RoleStance.REFUTE: "👎",
-    RoleStance.UNCERTAIN: "❔",
+    RoleStance.SUPPORT: "支持",
+    RoleStance.REFUTE: "反对",
+    RoleStance.UNCERTAIN: "未定",
     RoleStance.NOT_APPLICABLE: "—",
 }
 
 
 RUN_MODE_DESCRIPTION: dict[RunMode, tuple[str, str, str]] = {
-    # 模式 -> (图标, 颜色, 说明)
+    # 模式 -> (图标位保留, 颜色, 说明)；正式界面不显示装饰性图标，故图标位留空
     RunMode.MOCK: (
-        "🧪",
+        "",
         "#5f6b7a",
         "离线模拟：不调用任何真实大模型，用本地模拟结果跑通流程。用于开发与断网演示，结果不具备事实核验意义。",
     ),
     RunMode.SINGLE_MODEL_MULTI_ROLE: (
-        "🧩",
+        "",
         "#3a5a8c",
         "单模型多角色模拟：同一个模型分别扮演事实审查员 / 证据审查员 / 独立复核员。"
         "角色之间有提示词与流程隔离，但**不是真正的多模型协同**。",
     ),
     RunMode.MULTI_PROVIDER: (
-        "🔀",
+        "",
         "#1a7f37",
         "多模型协同：不同角色由不同供应商/模型承担，独立复核员与生成方不是同一个模型。",
     ),
@@ -151,7 +151,7 @@ def render_run_mode_banner(settings: Settings) -> None:
     st.markdown(
         f'<div style="border-left:5px solid {color};background:{color}14;'
         f'padding:10px 14px;border-radius:6px;margin:8px 0 16px 0;">'
-        f'<div style="font-weight:600;color:{color};margin-bottom:4px;">{icon} 当前运行模式：{mode.value}</div>'
+        f'<div style="font-weight:600;color:{color};margin-bottom:4px;">当前运行模式：{mode.value}</div>'
         f'<div style="color:#333;font-size:0.9rem;">{text}</div>'
         f"</div>",
         unsafe_allow_html=True,
@@ -161,7 +161,7 @@ def render_run_mode_banner(settings: Settings) -> None:
 def render_config_warnings(settings: Settings) -> None:
     """把配置层面的风险如实告诉用户（不隐藏、不美化）。"""
     for message in settings.runtime_warnings:
-        st.warning(message, icon="⚠️")
+        st.warning(message)
 
 
 def section(title: str, caption: str | None = None, *, divider: bool = True) -> None:
@@ -202,9 +202,8 @@ def placeholder_page(
     """
     st.title(title)
     st.info(
-        f"🚧 本页尚未实现。计划在 **{planned_stage}** 完成。\n\n"
-        f"当前不会显示任何检测结果，避免出现「看起来像真数据其实不是」的内容。",
-        icon="🚧",
+        f"本页尚未实现，计划在 **{planned_stage}** 完成。\n\n"
+        f"当前不会显示任何检测结果，页面不展示任何虚构数据。",
     )
 
     st.subheader("这个页面将来会显示什么")

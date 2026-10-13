@@ -36,7 +36,7 @@ GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
 
 settings = Settings()
 
-st.title("📈 评测")
+st.title("评测")
 st.caption(
     "在人工标注测试集上真实跑一遍完整流程，给出主张级指标、失败案例与实验说明。"
     "所有数字都来自运行结果，**不做任何粉饰**。"
@@ -56,7 +56,7 @@ category_list = categories(cases)
 ai_labelled = sum(1 for case in cases if case.labeler_is_ai)
 human_confirmed = sum(1 for case in cases if case.human_confirmed)
 
-st.markdown("#### 📚 测试集概览")
+st.markdown("#### 测试集概览")
 stat_cols = st.columns(4)
 stat_cols[0].metric("用例总数", len(cases))
 stat_cols[1].metric("覆盖类别", len(category_list))
@@ -85,7 +85,6 @@ st.info(
     f"其中 {human_confirmed} 条已经过人工逐条确认，"
     f"仍有 {len(cases) - human_confirmed} 条为 AI 起草、等待确认——"
     "在**全部**确认之前，请不要把整体指标对外表述为「人工标注结果」。",
-    icon="ℹ️",
 )
 
 with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源、标注者与人工确认意见）", expanded=False):
@@ -101,7 +100,7 @@ with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源、标�
                     "标注问题类型": "、".join(item.value for item in case.gold_problem_types),
                     "真值来源": case.source_of_truth,
                     "标注者": case.labeler,
-                    "人工确认": "✅ 已确认" if case.human_confirmed else "⏳ 待确认",
+                    "人工确认": "已确认" if case.human_confirmed else "待确认",
                     "确认意见": case.human_comment,
                 }
                 for case in cases
@@ -113,7 +112,7 @@ with st.expander(f"查看全部 {len(cases)} 条标注（含真值来源、标�
 
 # ---------------------------------------------------------------- 运行评测
 st.divider()
-st.markdown("#### ▶️ 运行评测")
+st.markdown("#### 运行评测")
 
 run_col1, run_col2, run_col3 = st.columns([2, 2, 1])
 with run_col1:
@@ -136,7 +135,7 @@ with run_col2:
     )
 with run_col3:
     st.write("")
-    run_clicked = st.button("🚀 运行评测", type="primary", key="run_evaluation")
+    run_clicked = st.button("运行评测", type="primary", key="run_evaluation")
 
 selected_count = len(
     [case for case in cases if not chosen_categories or case.category in chosen_categories]
@@ -183,7 +182,7 @@ EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
 saved_files = sorted(EVALUATIONS_DIR.glob("*.json")) if EVALUATIONS_DIR.exists() else []
 
 st.divider()
-st.markdown("#### 🗂️ 查看评测结果")
+st.markdown("#### 查看评测结果")
 SESSION_OPTION = "（本次会话刚运行的）"
 source_options = ([SESSION_OPTION] if st.session_state.get("evaluation_report") else []) + [
     item.name for item in saved_files
@@ -216,11 +215,10 @@ if report.metric("total_llm_calls") == 0 and settings.llm_provider != "mock":
     st.warning(
         "这份存档的模型调用为 **0 次**（全部命中本地缓存），因此「平均耗时」与「token」两项反映的是缓存路径，"
         "不代表冷启动成本。冷启动实测数据见 docs/07-experiment-and-defense.md。",
-        icon="ℹ️",
     )
 
 st.divider()
-st.markdown(f"#### 📊 评测结果：{report.baseline}")
+st.markdown(f"#### 评测结果：{report.baseline}")
 st.caption(
     f"运行时间：{report.created_at.astimezone():%Y-%m-%d %H:%M:%S}　｜　"
     f"引擎：{report.engine_summary}　｜　用例数：{report.case_count}"
@@ -308,7 +306,7 @@ st.dataframe(
                 "类别": row.category,
                 "标注": row.gold_status,
                 "预测": row.predicted_status or "未命中",
-                "一致": "✅" if row.gold_status == row.predicted_status else "❌",
+                "一致": "是" if row.gold_status == row.predicted_status else "否",
                 "对齐到的主张": row.matched_claim_quote or "—",
                 "预测问题类型": "、".join(row.predicted_problem_types) or "—",
                 "证据数": len(row.evidence_ids),
@@ -325,23 +323,23 @@ st.dataframe(
 )
 
 if report.failures:
-    st.markdown(f"##### ❌ 失败案例（{len(report.failures)} 条，如实列出）")
+    st.markdown(f"##### 失败案例（{len(report.failures)} 条）")
     for item in report.failures:
         st.markdown(f"- **{item['case_id']}**（{item['kind']}）：{item['detail']}")
 else:
     st.success("本次评测没有失败案例（样本量小，这并不代表系统在所有情况下都可靠）。")
 
-st.markdown("##### ⚠️ 实验说明与局限")
+st.markdown("##### 实验说明与局限")
 for caveat in report.caveats:
     st.markdown(f"- {caveat}")
 
 st.divider()
-st.markdown("##### 🧪 基线说明")
+st.markdown("##### 基线说明")
 st.markdown(
     f"- **{BASELINE_B2}**：本项目的完整流程（拆解 → 检索 → 裁决 → 修正 → 复核）。\n"
     f"- **{BASELINE_B1}**：离线规则引擎 + 不检索，**完全免费**，用来给出一个下界参照"
     "（如果完整流程连它都赢不了，那就说明外部证据与模型没有带来价值）。\n"
-    "- **B0（让原模型自己检查自己）尚未实现**：我们没有把没真正跑过的对照数字放进这张表——"
+    "- **B0（让原模型自己检查自己）尚未实现**：未经实际运行的对照数据不纳入本表——"
     "宁可缺一行，也不编一行。"
 )
 st.caption(

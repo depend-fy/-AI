@@ -74,7 +74,7 @@ def test_workbench_runs_detection_and_stores_report() -> None:
     assert report.stats.suspicious_claims >= 4, "文内矛盾应当被判定为问题"
 
     assert any("检测完成" in element.value for element in app.success)
-    assert any("本次检测结果摘要" in element.value for element in app.markdown)
+    assert any("核验结果摘要" in element.value for element in app.markdown)
 
 
 def test_workbench_warns_instead_of_running_on_empty_input() -> None:
