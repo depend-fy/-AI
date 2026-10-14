@@ -24,6 +24,9 @@ pytest-of-*/
 .mypy_cache/
 *.log
 
+# ===== Office 临时锁文件（打开文档时自动生成，不能入库）=====
+~$*
+
 # ===== 编辑器 / 系统 =====
 .vscode/
 .idea/
