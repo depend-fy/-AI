@@ -198,6 +198,10 @@ class Claim(VeriMindModel):
         default_factory=list,
         description="要核验这条主张，必须回答的具体问题（至少 1 条）",
     )
+    search_subject: str = Field(
+        default="",
+        description="检索主体（人/机构/奖项等专有名词）；实体与百科类检索优先使用它。",
+    )
     initial_status: VerificationStatus | None = Field(
         default=None, description="初步核验状态；None 表示尚未核验"
     )
@@ -234,6 +238,13 @@ class ClaimDraft(VeriMindModel):
     priority: ClaimPriority = ClaimPriority.P1
     checkability: Checkability = Checkability.CHECKABLE
     verification_questions: list[str] = Field(default_factory=list)
+    search_subject: str = Field(
+        default="",
+        description=(
+            "该主张的检索主体（人、机构、奖项、作品等专有名词），用于在 Wikidata/维基百科检索。"
+            "中文没有空格，整句检索召不回，因此这里只写主体名，例如「屠呦呦」；没有明确主体时留空。"
+        ),
+    )
     confidence: ExtractionConfidence = ExtractionConfidence.MEDIUM
 
     @model_validator(mode="after")

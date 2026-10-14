@@ -260,7 +260,11 @@ def test_plan_explains_why_chinese_text_cannot_be_searched() -> None:
     assert claims
     plan = plan_claim(claims[0], analysis, allow_retrieval=True)
     assert not plan.queries
-    assert plan.skipped_reason and "中文" in plan.skipped_reason
+    # 意图：没有可检索标识时必须如实说明原因（而不是硬凑一个查询）。
+    # 说明文字随能力变化而更新：现在还会指出「也不属于可核验的实体或通用事实」。
+    assert plan.skipped_reason
+    assert "暂无法核验" in plan.skipped_reason
+    assert "可检索" in plan.skipped_reason
 
 
 def test_plan_explains_invalid_doi_instead_of_silently_skipping() -> None:
@@ -411,3 +415,125 @@ def test_retrieval_disabled_records_skipped(tmp_path: Path) -> None:
     assert outcome.query_count == 0
     for trace in outcome.traces.values():
         assert all(record.status is SearchStatus.SKIPPED for record in trace.records)
+
+# ==========================================================================
+# Wikidata / Wikipedia：实体与通用事实来源
+# ==========================================================================
+WIKIDATA_API = "https://www.wikidata.org/w/api.php"
+WIKIPEDIA_API = r"https://(zh|en)\.wikipedia\.org/w/api.php"
+
+
+@respx.mock
+def test_wikidata_returns_structured_facts_as_metadata_only(tmp_path: Path) -> None:
+    """Wikidata 给出的是**仅元数据**级证据（不能用于内容层面判断）。"""
+    from verimind.core.enums import EvidenceLevel, EvidenceSource
+    from verimind.retrieval.wikidata import WikidataSource
+
+    def handler(request):
+        action = dict(request.url.params).get("action")
+        if action == "wbsearchentities":
+            return httpx.Response(
+                200,
+                json={
+                    "search": [
+                        {"id": "Q1073814", "label": "中国中医科学院", "description": "education organization in Beijing, China"}
+                    ]
+                },
+            )
+        if action == "wbgetentities":
+            ids = dict(request.url.params).get("ids", "")
+            if ids == "Q1073814":
+                return httpx.Response(
+                    200,
+                    json={
+                        "entities": {
+                            "Q1073814": {
+                                "claims": {
+                                    "P571": [
+                                        {
+                                            "mainsnak": {
+                                                "datavalue": {"value": {"time": "+1955-00-00T00:00:00Z"}}
+                                            }
+                                        }
+                                    ],
+                                    "P17": [{"mainsnak": {"datavalue": {"value": {"id": "Q148"}}}}],
+                                }
+                            }
+                        }
+                    },
+                )
+            return httpx.Response(200, json={"entities": {"Q148": {"labels": {"zh": {"value": "中华人民共和国"}}}}})
+
+    respx.get(url__startswith=WIKIDATA_API).mock(side_effect=handler)
+    client = make_http(tmp_path, make_settings(tmp_path, retrieval_cache_hours=0))
+    lookup = WikidataSource(client).search_entity("中国中医科学院")
+    client.close()
+
+    assert lookup.records, "应当返回实体记录"
+    record = lookup.records[0]
+    assert record.source is EvidenceSource.WIKIDATA
+    assert record.level is EvidenceLevel.METADATA_ONLY, "Wikidata 只能是元数据级"
+    assert record.title == "中国中医科学院"
+    assert "1955" in (record.abstract or ""), "成立时间应当被取到"
+    assert "中华人民共和国" in (record.abstract or ""), "实体值应当被换成可读标签"
+    assert record.url.startswith("https://www.wikidata.org/wiki/Q")
+
+
+@respx.mock
+def test_wikipedia_returns_abstract_level_evidence(tmp_path: Path) -> None:
+    """Wikipedia 导语是**摘要**级证据（可进入内容层面判断）。"""
+    from verimind.core.enums import EvidenceLevel, EvidenceSource
+    from verimind.retrieval.wikipedia import WikipediaSource, looks_chinese
+
+    respx.get(url__regex=WIKIPEDIA_API).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "query": {
+                    "pages": {
+                        "1": {
+                            "pageid": 1,
+                            "index": 1,
+                            "title": "Tu Youyou",
+                            "extract": "Tu Youyou (born 30 December 1930) is a Nobel Prize-winning Chinese pharmaceutical chemist.",
+                        }
+                    }
+                }
+            },
+        )
+    )
+    client = make_http(tmp_path, make_settings(tmp_path, retrieval_cache_hours=0))
+    lookup = WikipediaSource(client).search_summary("屠呦呦")
+    client.close()
+
+    assert lookup.records
+    record = lookup.records[0]
+    assert record.source is EvidenceSource.WIKIPEDIA
+    assert record.level is EvidenceLevel.ABSTRACT, "维基导语是摘要级，可进入内容判断"
+    assert "1930" in (record.abstract or "")
+    assert record.url.startswith("https://zh.wikipedia.org/wiki/") or record.url.startswith(
+        "https://en.wikipedia.org/wiki/"
+    )
+    # 中文查询走中文维基，英文查询走英文维基
+    assert looks_chinese("屠呦呦于 1930 年出生") is True
+    assert looks_chinese("Tu Youyou was born in 1930") is False
+
+
+def test_subject_query_only_accepts_model_provided_subject() -> None:
+    """没有模型给出的检索主体时，不得拿整句去查百科（中文没有空格，必然召不回）。"""
+    # EXTRACTOR / analyze_text / plan_claim 都已在本文件顶部导入
+    from verimind.retrieval.router import plan_claim
+
+    text = "该方案在多个城市的试点覆盖率已经达到较高水平。"
+    analysis = analyze_text(text)
+    claims = EXTRACTOR.extract(text, max_claims=8).claims
+    plan = plan_claim(claims[0], analysis, allow_retrieval=True)
+    assert not plan.queries, "规则引擎抽出的主张没有检索主体，不应发起实体/百科查询"
+    assert plan.skipped_reason
+
+    # 模型给了检索主体时，才允许发起实体与百科查询
+    with_subject = claims[0].model_copy(update={"search_subject": "屠呦呦"})
+    plan2 = plan_claim(with_subject, analysis, allow_retrieval=True)
+    kinds = [query.kind for query in plan2.queries]
+    assert "wikidata_entity" in kinds and "wikipedia_summary" in kinds
+    assert all("屠呦呦" in query.value for query in plan2.queries), "必须用检索主体而不是整句"

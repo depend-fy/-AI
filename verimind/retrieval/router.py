@@ -35,7 +35,9 @@ from verimind.retrieval.arxiv import ArxivSource
 from verimind.retrieval.crossref import CrossrefSource
 from verimind.retrieval.http import RetrievalHttpClient, RetrievalStats
 from verimind.retrieval.openalex import OpenAlexSource
-from verimind.retrieval.parsing import SourceLookup, SourceRecord
+from verimind.retrieval.parsing import SourceLookup, SourceRecord, normalize_whitespace
+from verimind.retrieval.wikidata import WikidataSource
+from verimind.retrieval.wikipedia import WikipediaSource
 
 #: 从中文书名号里取候选标题；以及一段连续拉丁文（≥2 个词）当作英文标题候选
 _TITLE_IN_BRACKETS_RE = re.compile(r"《([^》]{4,80})》")
@@ -94,6 +96,19 @@ def _candidate_title(signals_text: str) -> str | None:
     return None
 
 
+def _subject_query(claim: Claim) -> str | None:
+    """取得实体/百科检索用的关键词：**只认模型给出的检索主体**。
+
+    为什么不拿整句兜底：中文没有空格，整句在 Wikidata/维基百科上召不回结果，
+    只会白白消耗检索次数、并让报告里堆满"已检索但无命中"。
+    宁可如实说明"没有可检索的主体"，也不要假装查过。
+    """
+    subject = normalize_whitespace(getattr(claim, "search_subject", "") or "")
+    if len(subject) >= 2:
+        return subject[:80]
+    return None
+
+
 def plan_claim(claim: Claim, analysis: DocumentAnalysis, *, allow_retrieval: bool) -> ClaimPlan:
     """为一条主张决定检索策略。"""
     if not allow_retrieval:
@@ -145,12 +160,22 @@ def plan_claim(claim: Claim, analysis: DocumentAnalysis, *, allow_retrieval: boo
             ),
         )
 
+    # 没有 DOI、也没有英文标题：若模型给出了检索主体，则改用实体与百科来源
+    subject = _subject_query(claim)
+    if subject:
+            return ClaimPlan(
+                claim.claim_id,
+                queries=(
+                    PlannedQuery("wikidata_entity", subject, f"在 Wikidata 核验实体事实：{subject}"),
+                    PlannedQuery("wikipedia_summary", subject, f"在维基百科检索可引用段落：{subject}"),
+                ),
+            )
+
     return ClaimPlan(
         claim.claim_id,
         skipped_reason=(
-            "该主张没有可检索的标识（DOI、标题或作者），"
-            "而原文是中文自由文本——Crossref/OpenAlex 主要收录学术元数据，"
-            "无法据此有效检索。系统选择如实标记「暂无法核验」，而不是硬凑结论。"
+            "该主张既没有可检索的标识（DOI、标题或作者），也不属于可核验的实体或通用事实，"
+            "系统选择如实标记「暂无法核验」，而不是硬凑结论。"
         ),
     )
 
@@ -259,6 +284,9 @@ def run_retrieval(
     crossref = CrossrefSource(client, mailto=settings.retrieval_mailto)
     openalex = OpenAlexSource(client, mailto=settings.retrieval_mailto)
     arxiv = ArxivSource(client, mailto=settings.retrieval_mailto)
+    web_enabled = bool(getattr(settings, "retrieval_web_sources_enabled", True))
+    wikidata = WikidataSource(client, mailto=settings.retrieval_mailto) if web_enabled else None
+    wikipedia = WikipediaSource(client, mailto=settings.retrieval_mailto) if web_enabled else None
 
     lookup_cache: dict[tuple[str, str], list[SourceLookup]] = {}
     counter = start_index
@@ -306,6 +334,8 @@ def run_retrieval(
                         crossref=crossref,
                         openalex=openalex,
                         arxiv=arxiv,
+                        wikidata=wikidata,
+                        wikipedia=wikipedia,
                     )
 
                 for lookup in lookup_cache[cache_key]:
@@ -353,6 +383,8 @@ def _execute(
     crossref: CrossrefSource,
     openalex: OpenAlexSource,
     arxiv: ArxivSource,
+    wikidata: WikidataSource | None = None,
+    wikipedia: WikipediaSource | None = None,
 ) -> list[SourceLookup]:
     """执行一个查询。DOI 查询会同时打 Crossref 与 OpenAlex（互为交叉验证）。"""
     if kind == "doi":
@@ -361,6 +393,10 @@ def _execute(
         return [crossref.search_bibliographic(value), openalex.search(value)]
     if kind == "arxiv_title":
         return [arxiv.search_title(value)]
+    if kind == "wikidata_entity":
+        return [wikidata.search_entity(value)] if wikidata is not None else []
+    if kind == "wikipedia_summary":
+        return [wikipedia.search_summary(value)] if wikipedia is not None else []
     return []
 
 

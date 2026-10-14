@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     retrieval_min_interval_seconds: float = Field(default=1.0, ge=0.0, le=10.0)
     retrieval_cache_hours: int = Field(default=24, ge=0, le=24 * 30)
     retrieval_max_queries_per_run: int = Field(default=12, ge=1, le=100)
+    #: 是否使用 Wikidata / Wikipedia（非学术事实与实体核验；均为免密钥公开接口）
+    retrieval_web_sources_enabled: bool = True
     retrieval_max_retries: int = Field(default=1, ge=0, le=3)
 
     # ---------------- 输入与流程限制 ----------------
