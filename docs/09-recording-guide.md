@@ -11,7 +11,7 @@
 ## 阶段 0｜T-60 分钟：环境验证（4 条命令，逐条核对）
 
 ```powershell
-cd C:\Users\ROG\Documents\deepseek-harness\default-workspace\verimind-ai
+cd <你的项目目录>\verimind-ai
 ```
 
 ### 0.1 环境自检
