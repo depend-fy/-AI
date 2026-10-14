@@ -13,6 +13,11 @@ __pycache__/
 data/*
 !data/.gitkeep
 
+# ===== 测试临时目录（pytest 的 tmp_path，可能被创建在项目内）=====
+pytest-of-*/
+**/pytest-of-*/
+.pytest_tmp/
+
 # ===== 工具缓存 =====
 .pytest_cache/
 .ruff_cache/
