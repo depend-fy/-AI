@@ -54,7 +54,7 @@
 | 阅读论文**全文**（现在最多读到摘要） | 可做但未做：arXiv / 开放获取全文解析留到后续 |
 | 核验中文文献（没有 DOI 的中文来源） | **不在计划内**——Crossref/OpenAlex 没有中文库的公开 API |
 | 核验非学术的日常事实（新闻、政策、产品参数） | 需要付费检索服务，暂不做 |
-| 在人工标注集上给出精确率、误报率 | 阶段 6 |
+| —（已实现）| 已在 **100 条**人工确认的标注集上给出精确率、召回率、误报率等指标，见下文「评测结果」 |
 
 > **核心边界**：「文献是真的」和「文献真的这么说」是**两个问题**；
 > 「改了」和「改对了」也是**两个问题**——所以修正必须过独立复核才允许进正文。
@@ -64,26 +64,47 @@
 
 ---
 
-## 二、快速开始（Windows / PowerShell）
+## 二、安装、快速开始与复现（Windows / PowerShell）
+
+### 2.1 安装（从零开始，约 3 分钟）
 
 ```powershell
 cd <项目目录>
 
-# 1) 环境自检（含大模型密钥连通性，会发一次极小请求）
+# 1) 创建虚拟环境（Python 3.13）
+py -3.13 -m venv .venv
+
+# 2) 安装依赖
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# 3) 配置（复制模板后填入模型 API Key；.env 已被 .gitignore 排除，不会提交）
+Copy-Item .env.example .env
+
+# 4) 环境自检（依赖、配置、数据目录、外部 API 连通性）
 .\.venv\Scripts\python.exe scripts\check_env.py --network
 .\.venv\Scripts\python.exe scripts\check_llm.py
+```
 
-# 2) 不开网页先跑一遍（推荐先做这步）
+> **无密钥也能跑**：不填 API Key 时系统进入「离线模拟」模式——界面、规则裁决、
+> 检索与全部 **245 项自动化测试**均可运行（测试完全离线、零成本）。
+
+### 2.2 快速开始
+
+```powershell
+cd <项目目录>
+
+# 1) 不开网页先跑一遍（推荐先做这步）
 .\.venv\Scripts\python.exe scripts\run_demo.py --list
 .\.venv\Scripts\python.exe scripts\run_demo.py --id internal_conflict
 
-# 3) 启动界面
+# 2) 启动界面
 powershell -ExecutionPolicy Bypass -File .\run.ps1
 ```
 
-浏览器打开后：首页 → 「检测工作台」载入示例 → 「开始检测」→ 「检测报告」。
+浏览器打开后：首页 → 「检测工作台」载入示例 → 「开始核验」→ 「检测报告」。
 
-### 环境自检脚本
+### 2.3 环境自检脚本
 
 | 脚本 | 检查什么 |
 | --- | --- |
@@ -91,14 +112,39 @@ powershell -ExecutionPolicy Bypass -File .\run.ps1
 | `scripts/check_llm.py` | 大模型密钥是否被读到（**只显示脱敏值**）、发一次极小请求验证可用性，并对 401/402/404/超时给出处理建议 |
 | `scripts/run_demo.py` | 命令行完整跑一次检测并打印报告（断网也能用作离线演示） |
 
-### 从零重建环境
+### 2.4 复现实验结果
+
+以下命令可在任何环境下复现本仓库的全部实验结论：
 
 ```powershell
-py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env    # 然后用记事本填 VERIMIND_LLM_API_KEY
+cd <项目目录>
+
+# ① 全量自动化测试（离线、零成本）
+.\.venv\Scripts\python.exe -m pytest -q                       # 期望：245 passed
+
+# ② 单条完整报告（真实模型 + 真实检索；含独立复核五项结论）
+.\.venv\Scripts\python.exe scripts\run_demo.py --id real_doi_wrong_claim
+.\.venv\Scripts\python.exe scripts\run_demo.py --id mixed_status_demo
+
+# ③ 三份评测存档（100 条标注集）
+.\.venv\Scripts\python.exe scripts\run_evaluation.py --baseline b0 --all
+.\.venv\Scripts\python.exe scripts\run_evaluation.py --baseline b1 --all
+.\.venv\Scripts\python.exe scripts\run_evaluation.py --baseline rules --all
+
+# ④ 界面
+powershell -ExecutionPolicy Bypass -File .\run.ps1
 ```
+
+| 复现项 | 说明 | 成本 |
+| --- | --- | --- |
+| ① 测试 | 全部离线，不联网、不调用模型 | **0** |
+| ② 单条报告 | 首次运行会真实调用模型与检索 | 约 2–3 次计费调用 |
+| ② 重复运行 | 命中本地缓存 | **0**（界面会标注"命中缓存"） |
+| ③ 评测 | `b0` 首次运行会真实计费；`b1` / `rules` 通常命中缓存 | `b0` 首次约 100 次调用 |
+| ④ 界面 | 与 ② 共用缓存 | 重复检测为 **0** |
+
+> 三份评测存档已随仓库提供于 `evaluations/`，**无需重新运行即可核对全部指标**；
+> 复现失败案例清单见 `docs/submission/测试样例-正常边界失败.md`。
 
 ---
 
@@ -106,7 +152,8 @@ Copy-Item .env.example .env    # 然后用记事本填 VERIMIND_LLM_API_KEY
 
 | 示例 | 演示什么 | 真实结果 |
 | --- | --- | --- |
-| `real_doi_wrong_claim` | 真实 DOI + 年份写错 | Crossref 与 OpenAlex 都查出 `10.1038/nature12373` 实际发表于 **2013 年**（标题 *Nanometre-scale thermometry in a living cell*），而样例写的是 2008 年 → **「存在矛盾 / 时间信息错误」**（`E2`，严重度高，附两条可点击证据）；同一 DOI 判定为**「已核实」**（只核实"存在"这一层面）；内容类主张因为没有摘要 → `N6`「证据不足」。**阶段 5 实测**：修正员给出"2008 年 → 2013 年"（三项确定性检查全通过），但**复核员否决了它**，理由是"该 DOI 的真实标题是纳米尺度测温，与原文声称的钙钛矿太阳能电池主题不符，只改年份等于默认了这个错误的文献对应关系"——最终**不采用**该修正，并把两个真正未解决的问题写进报告 ✅ |
+| `real_doi_wrong_claim` | 真实 DOI + 年份写错 | Crossref 与 OpenAlex 都查出 `10.1038/nature12373` 实际发表于 **2013 年**（标题 *Nanometre-scale thermometry in a living cell*），而样例写的是 2008 年 → **「存在矛盾 / 时间信息错误」**（`E2`，严重度高，附两条可点击证据）；同一 DOI 判定为**「已核实」**（只核实"存在"这一层面）；内容类主张因为没有摘要 → `N6`「证据不足」。**实测**：修正员给出"2008 年 → 2013 年"，独立复核员逐项检查后结论为**「通过但有风险」**——修正被采用，同时**明确指出它解决不了的风险**：该 DOI 的真实标题是纳米尺度测温，与原文声称的钙钛矿太阳能电池主题不符，只改年份并不能修正这个文献对应关系；该风险被写入报告 ✅
+> 复核结论由独立复核模型给出，**不是固定值**；不同轮次可能是「通过」「通过但有风险」或「未通过」。此处记录的是实测结果，不承诺固定行为。 |
 | `fake_doi` | 虚构 DOI + 数值夸大 | 6 条主张。DOI 前缀不合规 → `N5`（疑似引用不存在）；`提高 40%` 无出处 → `N2`；因果类结论 → `N3`。**检索 0 次**——因为格式不合规的 DOI 根本不能提交给注册机构，系统明确写出了这个理由 |
 | `internal_conflict` | 文内自相矛盾 | 7 条主张，**4 条「来源冲突」**（同一 DOI 两个年份 → `I1`；同一指标两个数值 → `I2`），证据来自原文自身 |
 | `insufficient_evidence` | 模糊权威 + 预测 | **3 条判「暂无法核验」**（观点/预测，`U1`，**不判成事实错误**）；「多项研究表明」→ `N4`；因果结论 → `N3`+`N4` |
@@ -246,7 +293,7 @@ verimind-ai/
 ├─ pages/
 │  ├─ 1_检测工作台.py           # 输入文本、载入示例、启动检测（已实现）
 │  ├─ 2_检测报告.py             # 主张/证据/问题/交叉比对/局限/导出（已实现）
-│  └─ 3_评测.py                 # 真实指标（阶段 6，目前是诚实占位页）
+│  └─ 3_评测.py                 # 三基线对照（B0/B1/离线规则）+ 失败案例 + 实验局限
 ├─ verimind/
 │  ├─ core/
 │  │  ├─ config.py              # 配置：.env、密钥脱敏、运行模式、单价与成本估算
