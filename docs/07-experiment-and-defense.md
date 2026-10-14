@@ -207,7 +207,7 @@ RAG 解决的是"把证据取回来"；我们解决的是"**证据能证明什�
 ## 七、复现命令
 
 ```powershell
-cd C:\Users\ROG\Documents\deepseek-harness\default-workspace\verimind-ai
+cd <你的项目目录>\verimind-ai
 
 .\.venv\Scripts\python.exe -m pytest -q                                  # 235 个测试，零费用
 .\.venv\Scripts\python.exe scripts\check_llm.py                          # 主模型 + 独立复核员连通性

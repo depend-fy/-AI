@@ -7,7 +7,7 @@
 ## 一、演示前 5 分钟准备
 
 ```powershell
-cd C:\Users\ROG\Documents\deepseek-harness\default-workspace\verimind-ai
+cd <你的项目目录>\verimind-ai
 
 # 1) 环境与密钥自检（应看到：主模型可用 + 独立复核员可用 → 多模型协同）
 .\.venv\Scripts\python.exe scripts\check_llm.py

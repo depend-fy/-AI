@@ -6,7 +6,7 @@
 ## 拍摄前准备（10 分钟）
 
 ```powershell
-cd C:\Users\ROG\Documents\deepseek-harness\default-workspace\verimind-ai
+cd <你的项目目录>\verimind-ai
 
 # 1) 预热缓存：让现场演示 0 费用、秒级响应
 .\.venv\Scripts\python.exe scripts\run_demo.py --id mixed_status_demo
