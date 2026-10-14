@@ -108,7 +108,7 @@ def test_report_page_renders_a_real_report(tmp_path: Path) -> None:
 
     markdown_all = "\n".join(element.value for element in app.markdown)
     assert "本次运行模式：离线模拟" in markdown_all
-    assert "系统局限" in markdown_all, "报告必须展示系统局限"
+    assert "适用范围与局限" in markdown_all, "报告必须展示适用范围与局限"
     assert "原文内部" in markdown_all or "相关证据" in markdown_all
 
     # 统计卡片与报告数据一致（不是页面自己数的）

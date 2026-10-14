@@ -75,7 +75,7 @@ def test_evaluation_page_shows_the_labeled_dataset() -> None:
     assert not app.exception
 
     markdown_all = "\n".join(element.value for element in app.markdown)
-    assert "测试集概览" in markdown_all
+    assert "测试集构成" in markdown_all
     assert "人工已确认" in markdown_all, "必须显示有多少条标注已经过人工确认"
 
     info_text = "\n".join(element.value for element in app.info)

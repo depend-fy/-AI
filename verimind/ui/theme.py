@@ -222,27 +222,196 @@ def placeholder_page(
 # --------------------------------------------------------------------------
 _CSS = """
 <style>
-  /* 让页面更接近"成品"而不是 demo：收紧默认间距、统一卡片圆角 */
-  .block-container {padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px;}
+  /* ============================================================
+     排版基线：衬线标题 + 系统字体正文/元数据（学术出版物惯例）
+     字体族优先使用中文衬线（宋体/思源宋体），回退到通用衬线
+     ============================================================ */
+  :root {
+      --vm-ink: #1a1a1a;          /* 正文墨色 */
+      --vm-ink-soft: #44484d;     /* 次级文字 */
+      --vm-meta: #6b7075;         /* 元数据 */
+      --vm-rule: #d8dbdf;         /* 细分隔线 */
+      --vm-rule-soft: #e8eaed;
+      --vm-accent: #1a3d63;       /* 单一强调色（深蓝） */
+      --vm-paper: #ffffff;
+      --vm-wash: #f7f8f9;         /* 极浅底 */
+      --vm-serif: "Songti SC", "SimSun", "Source Han Serif SC", "Noto Serif CJK SC",
+                  Georgia, "Times New Roman", serif;
+      --vm-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei",
+                 "PingFang SC", "Hiragino Sans GB", sans-serif;
+  }
+
+  /* 内容列：出版物式窄栏 + 充足留白 */
+  .block-container {
+      max-width: 1120px;
+      padding-top: 2.6rem;
+      padding-bottom: 4rem;
+  }
+
+  /* ---------- 标题：衬线、字重对比、句首大写 ---------- */
+  h1, h2, h3, h4, h5 {
+      font-family: var(--vm-serif) !important;
+      color: var(--vm-ink) !important;
+      letter-spacing: -0.01em;
+  }
+  h1 {font-size: 2.0rem !important; font-weight: 700 !important; line-height: 1.25 !important;}
+  h2 {font-size: 1.45rem !important; font-weight: 700 !important; line-height: 1.3 !important;
+      margin-top: 1.6rem !important;}
+  h3 {font-size: 1.15rem !important; font-weight: 700 !important; line-height: 1.35 !important;
+      margin-top: 1.4rem !important;}
+  h4 {font-size: 1.02rem !important; font-weight: 700 !important; margin-top: 1.2rem !important;}
+  h5 {font-size: 0.98rem !important; font-weight: 700 !important; color: var(--vm-ink-soft) !important;}
+
+  /* ---------- 正文 ---------- */
+  .stMarkdown p, .stMarkdown li, [data-testid="stMarkdownContainer"] p {
+      font-family: var(--vm-sans);
+      color: var(--vm-ink);
+      font-size: 0.95rem;
+      line-height: 1.72;
+  }
+  .stMarkdown li {margin-bottom: 0.28rem;}
+
+  /* ---------- 交互元素与元数据：系统字体、克制 ---------- */
+  button, .stButton button, [data-testid="stBaseButton-secondary"],
+  [data-testid="stBaseButton-primary"], input, textarea, select {
+      font-family: var(--vm-sans) !important;
+  }
+  .stButton button {
+      border-radius: 3px !important;
+      border: 1px solid var(--vm-rule) !important;
+      font-weight: 500 !important;
+      box-shadow: none !important;
+  }
+  .stButton button:hover {border-color: var(--vm-accent) !important; color: var(--vm-accent) !important;}
+  [data-testid="stBaseButton-primary"] {
+      background: var(--vm-accent) !important;
+      border-color: var(--vm-accent) !important;
+  }
+
+  /* ---------- 指标卡：去掉彩色底，改为出版物式数据行 ---------- */
   div[data-testid="stMetric"] {
-      background: #fbfcfd; border: 1px solid #e6e9ee; border-radius: 10px;
-      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      border-top: 2px solid var(--vm-ink);
+      border-radius: 0;
+      padding: 10px 2px 6px 2px;
   }
-  div[data-testid="stMetricLabel"] p {font-size: 0.82rem; color: #5f6b7a;}
+  div[data-testid="stMetricLabel"] p {
+      font-family: var(--vm-sans);
+      font-size: 0.78rem !important;
+      color: var(--vm-meta) !important;
+      letter-spacing: 0.02em;
+  }
+  div[data-testid="stMetricValue"] {
+      font-family: var(--vm-serif) !important;
+      font-weight: 700 !important;
+      color: var(--vm-ink) !important;
+  }
+
+  /* ---------- 分隔线：细分隔线是学术排版的主要结构手段 ---------- */
+  hr, [data-testid="stDivider"] hr {
+      border: none;
+      border-top: 1px solid var(--vm-rule);
+      margin: 1.5rem 0;
+  }
+
+  /* ---------- 折叠区：像论文附录 ---------- */
+  details, [data-testid="stExpander"] details {
+      border: 1px solid var(--vm-rule-soft) !important;
+      border-radius: 3px !important;
+      background: var(--vm-paper);
+  }
+  [data-testid="stExpander"] summary {
+      font-family: var(--vm-sans);
+      font-size: 0.9rem;
+      color: var(--vm-ink-soft);
+  }
+
+  /* ---------- 表格：三线表（学术论文表格惯例） ---------- */
+  [data-testid="stDataFrame"] {border: none !important;}
+  table {border-collapse: collapse; font-family: var(--vm-sans); font-size: 0.88rem;}
+  thead tr th {
+      border-top: 2px solid var(--vm-ink) !important;
+      border-bottom: 1px solid var(--vm-ink) !important;
+      background: transparent !important;
+      color: var(--vm-ink) !important;
+      font-weight: 700 !important;
+  }
+  tbody tr td {border-bottom: 1px solid var(--vm-rule-soft) !important;}
+  tbody tr:last-child td {border-bottom: 2px solid var(--vm-ink) !important;}
+
+  /* ---------- 代码块：等宽、浅底、细边 ---------- */
+  code, pre, .stCode {
+      font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace !important;
+      font-size: 0.84rem !important;
+  }
+  pre {border: 1px solid var(--vm-rule-soft) !important; border-radius: 3px !important;}
+
+  /* ---------- 提示条：去掉彩色气泡感，改为左边线 + 浅底 ---------- */
+  [data-testid="stAlert"] {
+      border-radius: 0 3px 3px 0 !important;
+      border-left: 3px solid var(--vm-accent) !important;
+      background: var(--vm-wash) !important;
+      box-shadow: none !important;
+  }
+  [data-testid="stAlert"] p {font-size: 0.9rem;}
+
+  /* ---------- 页头：出版物题头（细线分隔，不用渐变） ---------- */
   .vm-hero {
-      border: 1px solid #dfe4ea; border-left: 6px solid #1f4e79; border-radius: 12px;
-      padding: 20px 24px; background: linear-gradient(180deg, #f7fafd 0%, #ffffff 100%);
-      margin-bottom: 6px;
+      border: none;
+      border-bottom: 1px solid var(--vm-rule);
+      border-left: none;
+      border-radius: 0;
+      padding: 0 0 1.1rem 0;
+      background: transparent;
+      margin-bottom: 1.4rem;
   }
-  .vm-hero h1 {margin: 0 0 6px 0; font-size: 1.75rem; color: #14314f;}
-  .vm-hero p {margin: 0; color: #445; font-size: 0.98rem; line-height: 1.65;}
-  .vm-footer {
-      margin-top: 28px; padding-top: 14px; border-top: 1px solid #e6e9ee;
-      color: #6b7480; font-size: 0.82rem; line-height: 1.7;
+  .vm-hero h1 {
+      font-family: var(--vm-serif);
+      margin: 0 0 0.5rem 0;
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--vm-ink);
+      letter-spacing: -0.015em;
+  }
+  .vm-hero p {
+      margin: 0;
+      color: var(--vm-ink-soft);
+      font-size: 0.98rem;
+      line-height: 1.7;
+      max-width: 62em;
   }
   .vm-step {
-      display: inline-block; padding: 3px 10px; margin: 0 6px 6px 0; border-radius: 999px;
-      background: #eef3fb; border: 1px solid #c8d8ee; color: #1f4e79; font-size: 0.82rem;
+      display: inline-block;
+      padding: 2px 0;
+      margin: 0 14px 4px 0;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--vm-rule);
+      color: var(--vm-meta);
+      font-family: var(--vm-sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.01em;
+  }
+
+  /* ---------- 页脚：小字、细线、克制 ---------- */
+  .vm-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--vm-rule);
+      color: var(--vm-meta);
+      font-family: var(--vm-sans);
+      font-size: 0.78rem;
+      line-height: 1.75;
+  }
+
+  /* ---------- 徽标：降饱和、去圆角气泡 ---------- */
+  .vm-badge, span[style*="border-radius:12px"] {
+      border-radius: 2px !important;
+      font-family: var(--vm-sans);
+      letter-spacing: 0.01em;
   }
 </style>
 """
@@ -254,11 +423,14 @@ def inject_css() -> None:
 
 
 def hero(title: str, subtitle: str, points: list[str] | None = None) -> None:
-    """页面顶部的"产品化"标题区。"""
-    body = f'<p>{subtitle}</p>'
+    """页面题头：学术出版物式（衬线标题 + 细线分隔 + 关键词行）。
+
+    刻意不用渐变、不用彩色卡片——把注意力留给内容本身。
+    """
+    body = f"<p>{subtitle}</p>"
     if points:
         chips = "".join(f'<span class="vm-step">{item}</span>' for item in points)
-        body += f'<div style="margin-top:10px;">{chips}</div>'
+        body += f'<div style="margin-top:14px;">{chips}</div>'
     st.markdown(
         f'<div class="vm-hero"><h1>{title}</h1>{body}</div>',
         unsafe_allow_html=True,
@@ -266,13 +438,14 @@ def hero(title: str, subtitle: str, points: list[str] | None = None) -> None:
 
 
 def render_footer(*, extra: str | None = None) -> None:
-    """统一的页脚：免责声明 + 诚实边界。每一页都要有，不能只在报告页写。"""
+    """页脚声明：适用范围与边界。每页统一出现。"""
     notes = [
-        "本系统给出的是**基于可检索公开证据的辅助判断**，不是学术结论、法律意见或事实认定的最终依据。",
-        "「文献是真的」与「文献真的这么说」是两个问题；「改了」与「改对了」也是两个问题——系统对后者一律要求独立复核。",
-        "证据不足或无法核验时会明确标注，不会给出猜测性结论，也不提供未经校准的「幻觉概率」。",
+        "本系统的输出为**基于公开可检索证据的辅助判断**，不构成学术结论、法律意见或事实认定的最终依据。",
+        "「文献是否存在」与「文献内容是否支持该表述」为两个独立问题；「已修正」与「修正正确」亦为两个独立问题，"
+        "后者一律须经独立复核。",
+        "证据不足或无法核验时予以明确标注，不输出推测性结论，亦不提供未经校准的概率化评分。",
     ]
     if extra:
         notes.append(extra)
-    items = "".join(f"<div>· {item}</div>" for item in notes)
+    items = "".join(f"<div>{item}</div>" for item in notes)
     st.markdown(f'<div class="vm-footer">{items}</div>', unsafe_allow_html=True)

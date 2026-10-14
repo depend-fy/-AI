@@ -49,7 +49,7 @@ GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
 settings = Settings()
 
 st.title("展示与答辩")
-st.caption("按评委的时间预算分三档：先看结论，再看流程，最后查细节。全部数字均来自真实运行。")
+st.caption("按评审时间预算分三档：结论、流程、细节。全部数据来自真实运行。")
 
 render_run_mode_banner(settings)
 render_config_warnings(settings)
@@ -234,7 +234,7 @@ with tab_demo:
 # 答辩备查
 # ==========================================================================
 with tab_detail:
-    st.markdown("#### 实时状态")
+    st.markdown("#### 当前配置")
     config_cols = st.columns(4)
     config_cols[0].metric("运行模式", settings.run_mode.value)
     config_cols[1].metric("生成模型", settings.llm_provider)
@@ -251,7 +251,7 @@ with tab_detail:
 
     if GOLDEN_PATH.exists():
         stats = dataset_stats(GOLDEN_PATH)
-        st.markdown("#### 人工标注测试集确认进度")
+        st.markdown("#### 标注集确认进度")
         label_cols = st.columns(4)
         label_cols[0].metric("用例总数", stats.total)
         label_cols[1].metric("覆盖类别", stats.categories)
@@ -279,7 +279,7 @@ with tab_detail:
     render_pipeline_diagram()
 
     st.divider()
-    st.markdown("#### 最近检测记录")
+    st.markdown("#### 最近核验记录")
     try:
         repository = RunRepository(settings.sqlite_path)
         summaries = repository.list_recent(limit=8)
@@ -317,7 +317,7 @@ with tab_detail:
     render_environment(settings)
 
     st.divider()
-    st.markdown("#### 完整材料（可下载）")
+    st.markdown("#### 完整材料")
     render_doc(DOCS["architecture"], download_label="下载《技术架构与核心创新点》Markdown")
     render_doc(DOCS["demo"], download_label="下载《演示脚本》Markdown")
     render_doc(DOCS["experiment"], download_label="下载《实验报告与答辩材料》Markdown")

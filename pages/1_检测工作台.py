@@ -105,7 +105,7 @@ with count_col:
     )
     st.caption(f"模型型号（详情）：{settings.llm_model} ｜ {reviewer_label}")
     st.caption(
-        "运行前预估：每条主张约 **2–4 次模型调用**（主张拆解 / 事实审查 / 可能的证据审查、修正与复核）"
+        "运行前预估：每条主张约 2–4 次模型调用（主张拆解、事实审查，以及可能的证据审查、修正与复核）"
         "＋若干次外部检索。**同一段文本重复检测会命中本地缓存（0 次计费调用）**。"
         f"需要更长的输入时，在 `.env` 里设置 `VERIMIND_MAX_INPUT_CHARS`（当前 {settings.max_input_chars}）。"
     )

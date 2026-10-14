@@ -57,7 +57,7 @@ category_list = categories(cases)
 ai_labelled = sum(1 for case in cases if case.labeler_is_ai)
 human_confirmed = sum(1 for case in cases if case.human_confirmed)
 
-st.markdown("#### 测试集概览")
+st.markdown("#### 测试集构成")
 stat_cols = st.columns(4)
 stat_cols[0].metric("用例总数", len(cases))
 stat_cols[1].metric("覆盖类别", len(category_list))
@@ -185,7 +185,7 @@ EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
 saved_files = sorted(EVALUATIONS_DIR.glob("*.json")) if EVALUATIONS_DIR.exists() else []
 
 st.divider()
-st.markdown("#### 查看评测结果")
+st.markdown("#### 评测存档")
 SESSION_OPTION = "（本次会话刚运行的）"
 source_options = ([SESSION_OPTION] if st.session_state.get("evaluation_report") else []) + [
     item.name for item in saved_files

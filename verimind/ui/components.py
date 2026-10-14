@@ -468,12 +468,12 @@ def render_cross_check(report: DetectionReport) -> None:
     这一节存在的意义是**暴露分歧**，而不是掩盖分歧。
     一个小系统如果连自己的两个部件意见不一致都不敢说，那它给出的"结论"也没什么可信度。
     """
-    st.markdown("#### 引擎交叉比对（规则引擎与模型）")
+    st.markdown("#### 引擎交叉比对")
     if not report.cross_check_notes:
         st.caption("本次没有可展示的交叉比对信息。")
         return
     st.caption(
-        "规则引擎与模型分别独立拆解同一段文本，以下为两者差异与分歧的完整记录。"
+        "规则引擎与模型分别独立拆解同一段文本，以下为两者差异的完整记录。"
         "（不做取舍、不做美化）。"
     )
     for note in report.cross_check_notes:
@@ -509,7 +509,7 @@ def render_limitations(report: DetectionReport) -> None:
     """系统局限：必须显著展示，不能藏在角落里。"""
     if not report.limitations:
         return
-    st.markdown("#### 系统局限（本次检测的适用范围）")
+    st.markdown("#### 适用范围与局限")
     for item in report.limitations:
         st.markdown(f"- {item}")
 

@@ -9,12 +9,17 @@
     {
       "id": "contains",
       "status": "pass",
-      "text": "\u5feb\u901f\u4f53\u9a8c"
+      "text": "B0 \u76f4\u63a5\u95ee\u6a21\u578b"
     },
     {
       "id": "contains",
       "status": "pass",
-      "text": "\u5171\u8bc6\u7a0b\u5ea6"
+      "text": "44.9%"
+    },
+    {
+      "id": "contains",
+      "status": "pass",
+      "text": "100 \u6761"
     },
     {
       "id": "count",

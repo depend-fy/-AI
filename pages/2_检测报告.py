@@ -111,7 +111,7 @@ with _export_right:
 st.divider()
 st.markdown("#### 原文")
 with st.container():
-    st.caption("高亮部分为系统识别出的、需要核验的关键片段。")
+    st.caption("高亮部分为系统识别出的待核验片段。")
     from verimind.ui.components import render_text_panel
 
     render_text_panel(
@@ -177,7 +177,7 @@ render_cross_check(report)
 
 # ---------------------------------------------------------------- 状态图例
 st.divider()
-st.markdown("#### 状态含义对照")
+st.markdown("#### 状态定义")
 render_status_legend()
 
 # ---------------------------------------------------------------- 局限与运行信息
