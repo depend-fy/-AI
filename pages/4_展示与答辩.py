@@ -44,6 +44,7 @@ DOCS = {
     "experiment": PROJECT_ROOT / "docs" / "07-experiment-and-defense.md",
     "submission": PROJECT_ROOT / "docs" / "08-competition-submission.md",
     "video": PROJECT_ROOT / "docs" / "08-demo-video-script.md",
+    "recording": PROJECT_ROOT / "docs" / "09-recording-guide.md",
 }
 EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
 GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
@@ -322,6 +323,7 @@ with tab_detail:
     st.markdown("#### 完整材料")
     render_doc(DOCS["submission"], download_label="下载《参赛提交材料》Markdown")
     render_doc(DOCS["video"], download_label="下载《演示视频脚本》Markdown")
+    render_doc(DOCS["recording"], download_label="下载《录制全流程指南》Markdown")
     render_doc(DOCS["architecture"], download_label="下载《技术架构与核心创新点》Markdown")
     render_doc(DOCS["demo"], download_label="下载《演示脚本》Markdown")
     render_doc(DOCS["experiment"], download_label="下载《实验报告与答辩材料》Markdown")
