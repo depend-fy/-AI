@@ -55,9 +55,10 @@ def test_home_page_shows_real_project_info() -> None:
         mode in markdown_text for mode in ("离线模拟", "单模型多角色模拟", "多模型协同")
     ), "运行模式必须是三种明确模式之一，不能含糊"
 
-    # 首页必须如实声明当前能力边界
-    info_text = "\n".join(element.value for element in app.info)
-    assert "尚未做到" in info_text, "首页必须如实声明当前做不到什么"
+    # 首页必须如实声明当前能力边界（现以「当前能力 / 不足与缺陷」两块呈现）
+    assert "不足与缺陷" in markdown_text, "首页必须如实声明做不到什么"
+    assert "当前能力" in markdown_text, "首页必须声明已实现的能力"
+    assert "中文文献" in markdown_text, "必须写明中文文献无法核验"
 
     # 成品体验：首页要有一键演示入口（不用先粘文本也能看到完整效果）
     assert any(button.key == "one_click_demo" for button in app.button)

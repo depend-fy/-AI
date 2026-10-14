@@ -33,8 +33,11 @@ from verimind.core.schemas import (
 )
 
 #: 会被当作"事实"来核对的 token：DOI、年份、百分比、倍数/规模
+#:
+#: DOI 的字符集要**排除中文与中文标点**：否则「10.1234/abc（该 DOI 未登记）」
+#: 会被整体当成一个"新 DOI"，从而把「如实标注不确定性」的修正误判为凭空编造。
 _FACT_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"10\.\d{4,9}/[^\s，。；、）)】」》]+"),
+    re.compile(r"10\.\d{4,9}/[A-Za-z0-9._;()/:\-<>]+"),
     re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)"),
     re.compile(r"\d+(?:\.\d+)?\s*[%％]"),
     re.compile(r"\d+(?:\.\d+)?\s*(?:倍|万|亿|个百分点)"),

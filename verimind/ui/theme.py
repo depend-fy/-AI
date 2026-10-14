@@ -283,9 +283,21 @@ _CSS = """
       box-shadow: none !important;
   }
   .stButton button:hover {border-color: var(--vm-accent) !important; color: var(--vm-accent) !important;}
+  /* 主按钮：比正文强调色浅一档，避免在浅色页面上显得过重 */
   [data-testid="stBaseButton-primary"] {
-      background: var(--vm-accent) !important;
-      border-color: var(--vm-accent) !important;
+      background: #e8eef5 !important;
+      border: 1px solid #b9c9dc !important;
+      color: #1a3d63 !important;
+      font-weight: 600 !important;
+  }
+  [data-testid="stBaseButton-primary"]:hover {
+      background: #dbe6f1 !important;
+      border-color: #8fa9c6 !important;
+      color: #14314f !important;
+  }
+  [data-testid="stBaseButton-primary"]:focus:not(:active) {
+      border-color: #8fa9c6 !important;
+      color: #14314f !important;
   }
 
   /* ---------- 指标卡：去掉彩色底，改为出版物式数据行 ---------- */

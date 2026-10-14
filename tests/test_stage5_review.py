@@ -240,3 +240,60 @@ def test_combine_review_records_the_reviewer_identity() -> None:
         review_id="V001", draft=draft, reviewer=reviewer,
     )
     assert review.reviewer is not None and review.reviewer.provider == "deepseek"
+
+def test_extract_facts_does_not_swallow_chinese_into_doi() -> None:
+    """DOI 抽取遇到中文必须截止，否则会把「如实标注不确定性」误判为凭空编造。"""
+    text = "10.1234/nonexistent.2023.001（该 DOI 在 Crossref 中未登记，未能核实）"
+    facts = extract_facts(text)
+    assert "10.1234/nonexistent.2023.001" in facts
+    assert not any("（" in item for item in facts), f"DOI 吞掉了中文：{sorted(facts)}"
+    assert not any("该" in item for item in facts), f"DOI 吞掉了中文：{sorted(facts)}"
+
+
+def test_extract_facts_keeps_normal_doi_and_year() -> None:
+    """正常场景不受影响：英文 DOI 与年份照常抽出。"""
+    facts = extract_facts("见 10.1038/nature14539。该文发表于 2015 年。")
+    assert "10.1038/nature14539" in facts
+    assert "2015" in facts
+
+
+def test_uncertainty_annotation_correction_passes_review() -> None:
+    """给虚构 DOI 追加「未登记，未能核实」的修正应当通过复核（而不是被当成编造）。"""
+    from verimind.core.enums import ChangeType, EvidenceLevel, EvidenceRelation, EvidenceSource, JudgedAspect
+    from verimind.core.schemas import Correction, Evidence, Span
+    from verimind.review.independent_review import combine_review
+
+    original = "上述结论来自 10.1234/nonexistent.2023.001 所载的研究工作。"
+    start = original.index("10.1234/nonexistent.2023.001")
+    correction = Correction(
+        correction_id="K001",
+        claim_id="C001",
+        original_span=Span.from_text(original, start, start + len("10.1234/nonexistent.2023.001")),
+        proposed_text="10.1234/nonexistent.2023.001（该 DOI 在 Crossref 与 OpenAlex 中均未登记，未能核实）",
+        change_type=ChangeType.ADD_UNCERTAINTY,
+        rationale="注册机构返回 404，如实标注不确定性。",
+        evidence_ids=["E001"],
+    )
+    evidence = Evidence(
+        evidence_id="E001",
+        claim_ids=["C001"],
+        source=EvidenceSource.CROSSREF,
+        level=EvidenceLevel.METADATA_ONLY,
+        url="https://api.crossref.org/works/10.1234/nonexistent.2023.001",
+        relation=EvidenceRelation.REFUTES,
+        judged_aspect=JudgedAspect.EXISTENCE,
+        relation_rationale="Crossref 返回 404：该 DOI 未注册。",
+    )
+    review = combine_review(
+        claim=None, correction=correction, evidence_items=[evidence], review_id="V001", draft=None
+    )
+    failed = [check for check in review.checks if not check.passed]
+    # 没有复核结论时语义两项必然不通过，但**确定性三项必须全部通过**：
+    # 该修正引用证据、未引入新事实、与证据匹配。
+    deterministic_failed = [
+        check
+        for check in failed
+        if check.check.value
+        in ("修正内容是否有证据支持", "证据与修正后表述是否匹配", "是否引入新的事实错误")
+    ]
+    assert not deterministic_failed, f"确定性检查误杀正确修正：{[c.detail for c in deterministic_failed]}"
