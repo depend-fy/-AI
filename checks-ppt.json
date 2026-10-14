@@ -9,17 +9,17 @@
     {
       "id": "contains",
       "status": "pass",
+      "text": "\u4e8b\u5b9e\u6838\u9a8c Agent"
+    },
+    {
+      "id": "contains",
+      "status": "pass",
+      "text": "\u4efb\u52a1\u89c4\u5212"
+    },
+    {
+      "id": "contains",
+      "status": "pass",
       "text": "B0 \u76f4\u63a5\u95ee\u6a21\u578b"
-    },
-    {
-      "id": "contains",
-      "status": "pass",
-      "text": "44.9%"
-    },
-    {
-      "id": "contains",
-      "status": "pass",
-      "text": "100 \u6761"
     },
     {
       "id": "count",

@@ -22,6 +22,7 @@ from verimind.core.enums import (
     ProblemType,
     STATUS_DISPLAY_ORDER,
 )
+from verimind.ui.method_notes import render_competition_alignment
 from verimind.ui.theme import (
     render_config_warnings,
     render_run_mode_banner,
@@ -45,18 +46,16 @@ dataset = dataset_stats()
 # ---------------------------------------------------------------- 页头
 hero(
     "智鉴 AI（VeriMind AI）",
-    "多模型协同的 <b>AI 幻觉检测、证据溯源、错误归因与自动修正</b>系统"
-    f"　<span style='color:#6b7480;font-size:0.9rem;'>Demo 版 v{__version__}</span><br>"
-    "对文本中的事实性主张进行证据核验、错误归因与可复核的修正。"
+    "面向科研文本的 <b>事实核验 Agent</b>：对论文、综述与研究报告中的事实性主张逐条核验，"
+    "输出可追溯的证据、可解释的判定与可复核的修正建议。"
+    f"　<span style='color:#6b7480;font-size:0.9rem;'>v{__version__}</span><br>"
     "系统不将模型判断作为结论：每项判定均须经外部证据、明确规则与独立复核。",
     [
-        "① 拆解主张",
-        "② 检索真实文献",
-        "③ 区分「存在」与「内容被支持」",
-        "④ 可解释规则裁决",
-        "⑤ 最小改动修正",
-        "⑥ 跨厂商独立复核",
-        "⑦ 20 条标注集评测",
+        "① 任务规划",
+        "② 工具调用",
+        "③ 执行反馈",
+        "④ 结果验证",
+        "⑤ 异常处理",
     ],
 )
 
@@ -86,6 +85,10 @@ st.caption("技术路线、方法比较、核验流程与运行环境明细，�
 safe_page_link("pages/4_展示与答辩.py", label="查看方法与答辩材料", icon=None)
 
 
+
+# ---------------------------------------------------------------- 任务闭环对照
+st.divider()
+render_competition_alignment()
 
 # ---------------------------------------------------------------- 状态说明
 st.divider()

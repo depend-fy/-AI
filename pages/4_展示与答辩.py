@@ -42,6 +42,8 @@ DOCS = {
     "architecture": PROJECT_ROOT / "docs" / "07-architecture-and-innovation.md",
     "demo": PROJECT_ROOT / "docs" / "07-demo-script.md",
     "experiment": PROJECT_ROOT / "docs" / "07-experiment-and-defense.md",
+    "submission": PROJECT_ROOT / "docs" / "08-competition-submission.md",
+    "video": PROJECT_ROOT / "docs" / "08-demo-video-script.md",
 }
 EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
 GOLDEN_PATH = PROJECT_ROOT / "examples" / "golden_set.jsonl"
@@ -97,7 +99,7 @@ tab_intro, tab_demo, tab_detail = st.tabs(["30 秒看懂", "3 分钟演示", "�
 # 30 秒看懂
 # ==========================================================================
 with tab_intro:
-    st.markdown("### 让每条 AI 事实主张都有可追溯的证据与复核结论")
+    st.markdown("### 面向科研文本的事实核验 Agent")
     st.markdown("系统不把模型怀疑当作结论：**每条判断均须经过外部证据、明确规则与独立复核。**")
 
     stats = dataset_stats(GOLDEN_PATH) if GOLDEN_PATH.exists() else None
@@ -318,6 +320,8 @@ with tab_detail:
 
     st.divider()
     st.markdown("#### 完整材料")
+    render_doc(DOCS["submission"], download_label="下载《参赛提交材料》Markdown")
+    render_doc(DOCS["video"], download_label="下载《演示视频脚本》Markdown")
     render_doc(DOCS["architecture"], download_label="下载《技术架构与核心创新点》Markdown")
     render_doc(DOCS["demo"], download_label="下载《演示脚本》Markdown")
     render_doc(DOCS["experiment"], download_label="下载《实验报告与答辩材料》Markdown")
