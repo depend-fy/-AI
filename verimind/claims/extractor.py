@@ -354,7 +354,6 @@ def drafts_to_claims(
             priority=draft.priority,
             checkability=draft.checkability,
             verification_questions=list(draft.verification_questions),
-            search_subject=(draft.search_subject or "").strip(),
             extracted_by=extracted_by,
             extraction_confidence=draft.confidence,
         )

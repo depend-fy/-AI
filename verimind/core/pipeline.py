@@ -30,7 +30,6 @@ from verimind.claims.extractor import ExtractionResult, PRIORITY_RANK
 from verimind.claims.preprocess import DocumentAnalysis, analyze_text
 from verimind.core.config import Settings, get_settings
 from verimind.core.enums import (
-    EvidenceSource,
     EvidenceLevel,
     EvidenceRelation,
     JudgedAspect,
@@ -363,20 +362,6 @@ def _sync_evidence(report: DetectionReport, external_by_claim: dict[str, list[Ev
     ]
 
 
-#: 实体 / 百科类来源：查询词是整句描述，不能套用学术标题匹配
-_ENTITY_SOURCES = {EvidenceSource.WIKIDATA, EvidenceSource.WIKIPEDIA}
-
-
-def _entity_plausible(item: Evidence) -> bool:
-    """实体/百科证据的弱校验：至少有标题或链接，且不是「未找到」记录。
-
-    刻意做得很弱——「检索词是句子、返回是实体名」是这类来源的常态。
-    真正的把关交给：查询规划（只对实体/通用事实类主张发起）+ 规则层（无证据则判证据不足）。
-    """
-    if item.title or item.url:
-        return True
-    return False
-
 def _match_external_evidence(
     report: DetectionReport,
     retrieval: RetrievalOutcome,
@@ -393,17 +378,9 @@ def _match_external_evidence(
             item = by_id.get(evidence_id)
             if item is None:
                 continue
-            # 按标题检索命中时，先确认「查到的是不是同一篇」，
-            # 否则会把别人的年份当成原文那条引用的年份，凭空造出一个「年份错误」。
-            #
-            # 例外：实体/百科类来源（Wikidata/Wikipedia）的查询词是**整句描述**，
-            # 返回的是**实体名**，两者本来就不会相似；对它们套用标题匹配会把有效证据全部丢掉。
-            # 这类来源由查询规划限制在「实体/通用事实」类主张上，因此这里只做弱校验。
-            if item.source in _ENTITY_SOURCES:
-                if not _entity_plausible(item):
-                    dropped += 1
-                    continue
-            elif not item.doi and item.title and item.query:
+            # 按标题检索命中时，先确认"查到的是不是同一篇"，
+            # 否则会把别人的年份当成原文那条引用的年份，凭空造出一个"年份错误"。
+            if not item.doi and item.title and item.query:
                 if assess_title_match(item, item.query) is None:
                     dropped += 1
                     continue

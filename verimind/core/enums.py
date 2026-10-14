@@ -126,8 +126,6 @@ class EvidenceSource(_ZhEnum):
     CROSSREF = "Crossref"
     OPENALEX = "OpenAlex"
     ARXIV = "arXiv"
-    WIKIDATA = "Wikidata"
-    WIKIPEDIA = "Wikipedia"
     SEMANTIC_SCHOLAR = "Semantic Scholar"
     EUROPE_PMC = "Europe PMC"
     MANUAL = "人工提供"
