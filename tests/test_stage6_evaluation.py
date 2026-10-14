@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from pydantic import ValidationError
+
 from verimind.core.config import Settings
 from verimind.core.enums import (
     ClaimType,
@@ -319,3 +321,114 @@ def test_offline_evaluation_can_filter_categories(tmp_path: Path) -> None:
     assert all(row.category == "来源冲突" for row in report.rows)
     # 文内矛盾不需要外部证据，离线也能判出来
     assert any(row.predicted_status == "来源冲突" for row in report.rows)
+
+# ==========================================================================
+# B0 基线：直接问模型（无外部证据）
+# ==========================================================================
+def test_verification_result_requires_explicit_flag_for_evidence_free_judgement() -> None:
+    """没有证据却判定「存在矛盾」必须被拦住，除非显式声明这是无证据判断。"""
+    from verimind.core.enums import ProblemType, VerificationStatus
+    from verimind.core.schemas import SearchRecord, SearchTrace, VerificationResult
+    from verimind.core.enums import SearchStatus
+
+    trace = SearchTrace(
+        records=[SearchRecord(source=None, query="未检索", status=SearchStatus.SKIPPED, hit_count=0)]
+    )
+
+    # 不给标记 -> 应当被拒绝（这条约束是项目核心原则）
+    with pytest.raises(ValidationError):
+        VerificationResult(
+            claim_id="C001",
+            status=VerificationStatus.CONTRADICTED,
+            problem_types=[ProblemType.FACT_ERROR],
+            rationale="模型觉得有问题",
+            search_trace=trace,
+        )
+
+    # 给了标记但没有理由 -> 同样被拒绝（无法与有证据的结论区分）
+    with pytest.raises(ValidationError):
+        VerificationResult(
+            claim_id="C001",
+            status=VerificationStatus.CONTRADICTED,
+            problem_types=[ProblemType.FACT_ERROR],
+            rationale="   ",
+            judged_without_evidence=True,
+            search_trace=trace,
+        )
+
+    # 标记 + 理由 -> 允许，且必须能识别出来
+    result = VerificationResult(
+        claim_id="C001",
+        status=VerificationStatus.CONTRADICTED,
+        problem_types=[ProblemType.FACT_ERROR],
+        rationale="[B0 无证据判断] 模型依据自身知识作答：该年份与我的记忆不符。",
+        judged_without_evidence=True,
+        search_trace=trace,
+    )
+    assert result.judged_without_evidence is True
+    assert result.status is VerificationStatus.CONTRADICTED
+
+
+def test_b0_prompt_has_no_evidence_and_forbids_fabrication() -> None:
+    """B0 的提示词必须明确「没有外部检索」，并要求不确定时如实选证据不足。"""
+    from verimind.evaluation.baseline_b0 import B0_SYSTEM_PROMPT, build_b0_prompt
+
+    assert "没有任何外部检索" in B0_SYSTEM_PROMPT
+    assert "不要编造" in B0_SYSTEM_PROMPT
+    prompt = build_b0_prompt("某研究发表于 2008 年（DOI: 10.1038/nature14539）。")
+    assert "TEXT" in prompt
+    assert "证据不足" in prompt
+
+
+def test_b0_report_contains_no_evidence_and_is_marked() -> None:
+    """B0 包装出的报告结构合法：主张有状态、但**没有任何证据**，且逐条自曝无证据。"""
+    from verimind.core.enums import VerificationStatus
+    from verimind.evaluation.baseline_b0 import B0ClaimJudgement, B0Report
+    from verimind.evaluation.dataset import GoldenCase
+    from verimind.evaluation.runner import _b0_report
+    from verimind.models.base import LLMClient, LlmUsage
+
+    class FakeB0Client(LLMClient):
+        """假的 B0 客户端：直接返回预设判断，不联网、不花钱。"""
+
+        provider = "test"
+        model = "b0-fake"
+        is_simulated = False
+
+        def complete_structured(self, *, role, prompt, schema, system="", context=None):  # noqa: ANN001, ANN003
+            return (
+                B0Report(
+                    claims=[
+                        B0ClaimJudgement(
+                            quote="该研究发表于 2008 年",
+                            status=VerificationStatus.CONTRADICTED,
+                            reason="我的记忆里该文献是 2015 年发表的。",
+                        )
+                    ]
+                ),
+                LlmUsage(provider="test", model="b0-fake", prompt_tokens=10, completion_tokens=5),
+            )
+
+    case = GoldenCase(
+        case_id="T01",
+        category="明确错误事实",
+        text="该研究发表于 2008 年（DOI: 10.1038/nature14539）。",
+        gold_claim_quote="2008 年",
+        gold_status=VerificationStatus.CONTRADICTED,
+        source_of_truth="测试",
+        labeler="测试",
+    )
+    failures: list[str] = []
+    report = _b0_report(case, FakeB0Client(), failures)
+
+    assert report.claims, "应当至少落地一条主张"
+    assert report.evidence == [], "B0 不产生任何证据"
+    assert not failures
+    for result in report.verification_results:
+        assert result.judged_without_evidence is True
+        assert "无证据判断" in result.rationale
+        assert not (
+            result.supporting_evidence_ids
+            or result.refuting_evidence_ids
+            or result.related_evidence_ids
+        )

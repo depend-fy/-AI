@@ -35,6 +35,7 @@ from verimind.core.config import Settings  # noqa: E402
 from verimind.core.errors import VeriMindError  # noqa: E402
 from verimind.evaluation.dataset import load_golden_set  # noqa: E402
 from verimind.evaluation.runner import (  # noqa: E402
+    BASELINE_B0,
     BASELINE_B1,
     BASELINE_B2,
     EvaluationReport,
@@ -113,7 +114,12 @@ def print_report(report: EvaluationReport) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="在人工标注测试集上运行评测")
-    parser.add_argument("--baseline", choices=["b1", "b2"], default="b2", help="b1=离线规则引擎；b2=完整流程")
+    parser.add_argument(
+        "--baseline",
+        choices=["b0", "b1", "b2"],
+        default="b2",
+        help="b0=直接问模型（无外部证据）；b1=离线规则引擎；b2=完整流程",
+    )
     parser.add_argument("--all", action="store_true", help="跑全部用例")
     parser.add_argument("--ids", default="", help="指定用例编号，逗号分隔（如 G01,G04）")
     parser.add_argument("--categories", default="", help="按类别筛选，逗号分隔")
@@ -123,8 +129,12 @@ def main() -> int:
 
     cases = load_golden_set(PROJECT_ROOT / "examples" / "golden_set.jsonl")
     settings = Settings()
-    active = settings if args.baseline == "b2" else offline_settings(settings)
-    baseline = BASELINE_B2 if args.baseline == "b2" else BASELINE_B1
+    if args.baseline == "b2":
+        active, baseline = settings, BASELINE_B2
+    elif args.baseline == "b1":
+        active, baseline = offline_settings(settings), BASELINE_B1
+    else:
+        active, baseline = settings, BASELINE_B0
 
     only_ids = [item.strip() for item in args.ids.split(",") if item.strip()]
     only_categories = [item.strip() for item in args.categories.split(",") if item.strip()]

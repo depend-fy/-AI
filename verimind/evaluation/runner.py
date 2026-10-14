@@ -16,14 +16,35 @@ from typing import Any, Callable
 from pydantic import Field
 
 from verimind.core.config import Settings
-from verimind.core.enums import EvidenceSource
+from verimind.core.enums import (
+    SUSPICIOUS_STATUSES,
+    ClaimType,
+    EvidenceSource,
+    ProblemType,
+    RunMode,
+    SearchStatus,
+    Severity,
+    VerificationStatus,
+)
 from verimind.core.pipeline import ProgressEvent, run_detection
-from verimind.core.schemas import DetectionReport, VeriMindModel
+from verimind.core.schemas import (
+    Claim,
+    DetectionReport,
+    SearchRecord,
+    SearchTrace,
+    Span,
+    VerificationResult,
+    VeriMindModel,
+)
+from verimind.evaluation.baseline_b0 import BASELINE_B0, run_b0
 from verimind.evaluation.dataset import GoldenCase, load_golden_set, match_claim
 from verimind.evaluation.metrics import CaseOutcome, compute_metrics, summarize_failures
+from verimind.models.base import CallBudget, LLMClient, build_client
 from verimind.review.independent_review import extract_facts
 
-#: 评测基线标识。B0（让模型自检）**尚未实现**——我们不做没有真正跑过的对照表。
+#: 评测基线标识。
+#: B0 对照的是「直接问模型」（同一个模型、不给任何外部证据），
+#: B1 对照的是「没有模型」（离线规则引擎 + 不检索），B2 是本项目的完整流程。
 BASELINE_B2 = "B2 证据增强（本项目完整流程）"
 BASELINE_B1 = "B1 离线规则引擎 + 不检索（下界参照）"
 
@@ -188,6 +209,88 @@ def _row(case: GoldenCase, report: DetectionReport) -> EvaluationRow:
     )
 
 
+def _b0_report(case: GoldenCase, client: LLMClient, failures: list[str]) -> DetectionReport:
+    """把 B0（直接问模型）的结论包装成一份结构合法的报告，以便与主流程用同一套指标比较。
+
+    刻意保持的三个"没有"（这正是 B0 的定义）：
+        · 没有外部检索 → 证据列表为空、检索次数为 0；
+        · 没有证据 → 证据可追溯率必然为 0；
+        · 没有规则裁决 → 状态直接来自模型自述。
+    """
+    import uuid
+
+    judgement, error = run_b0(case.text, client=client)
+    if error:
+        failures.append(f"{case.case_id}：B0 调用失败（{error}）")
+
+    claims: list[Claim] = []
+    results: list[VerificationResult] = []
+    # B0 没有独立的拆解步骤，这里按它自己给出的引用逐条建主张；
+    # 引用定位不到就跳过（与主流程同一条纪律：绝不硬凑位置）。
+    for index, item in enumerate(judgement.claims if judgement else [], start=1):
+        start = case.text.find(item.quote)
+        if start < 0:
+            continue
+        claim_id = f"C{index:03d}"
+        span = Span.from_text(case.text, start, start + len(item.quote))
+        claims.append(
+            Claim(
+                claim_id=claim_id,
+                source_span=span,
+                parent_sentence_span=Span.from_text(case.text, 0, len(case.text)),
+                normalized_claim=item.quote,
+                claim_type=ClaimType.GENERAL_FACT,
+                verification_questions=["B0 基线：由模型直接判断，无核验问题。"],
+                extracted_by="B0（直接问模型）",
+            )
+        )
+        results.append(
+            VerificationResult(
+                claim_id=claim_id,
+                status=item.status,
+                problem_types=list(item.problem_types)
+                or ([ProblemType.FACT_ERROR] if item.status in SUSPICIOUS_STATUSES else []),
+                severity=Severity.NONE,
+                rationale=f"[B0 无证据判断] 模型依据自身知识作答：{item.reason or '（未给出理由）'}",
+                supporting_evidence_ids=[],
+                refuting_evidence_ids=[],
+                related_evidence_ids=[],
+                missing_evidence=(
+                    ["B0 基线不做外部检索，因此没有任何证据可依；如需证据请使用完整流程。"]
+                    if item.status
+                    in (VerificationStatus.INSUFFICIENT, VerificationStatus.UNVERIFIABLE)
+                    else []
+                ),
+                judged_without_evidence=True,
+                search_trace=SearchTrace(
+                    records=[
+                        SearchRecord(
+                            source=None,
+                            query="未检索（B0 基线不做外部检索）",
+                            status=SearchStatus.SKIPPED,
+                            hit_count=0,
+                            detail="B0 的定义就是「不给外部证据」，因此本次没有发起任何检索。",
+                        )
+                    ]
+                ),
+                adjudication_rule="B0（模型直接判断，无证据）",
+            )
+        )
+
+    return DetectionReport(
+        run_id=uuid.uuid4().hex,
+        input_text=case.text,
+        run_mode=RunMode.SINGLE_MODEL_MULTI_ROLE,
+        claims=claims,
+        verification_results=results,
+        limitations=[
+            "本报告来自 B0 基线：模型在**没有任何外部证据**的情况下直接判断，因此不产生证据、也无法追溯。",
+            "B0 的判断依据是模型自身知识，可能存在与主流程同源或记忆错误的问题。",
+        ],
+        cross_check_notes=["B0 基线：单次模型调用直接判断，无拆解/检索/规则裁决/复核环节。"],
+    )
+
+
 def run_evaluation(
     *,
     settings: Settings,
@@ -213,10 +316,22 @@ def run_evaluation(
 
     outcomes: list[CaseOutcome] = []
     rows: list[EvaluationRow] = []
+    b0_client: LLMClient | None = None
+    b0_failures: list[str] = []
+    if baseline == BASELINE_B0:
+        # B0：同一个模型、不给任何外部证据——对照的是「直接问模型」这件事本身
+        b0_client = build_client(
+            settings,
+            budget=CallBudget(limit=max(settings.llm_max_calls_per_run, len(selected) * 2)),
+        )
+
     for index, case in enumerate(selected, start=1):
         if on_case is not None:
             on_case(index, len(selected), case)
-        report = run_detection(case.text, settings=settings, progress=progress)
+        if b0_client is not None:
+            report = _b0_report(case, b0_client, b0_failures)
+        else:
+            report = run_detection(case.text, settings=settings, progress=progress)
         outcomes.append(_outcome(case, report))
         rows.append(_row(case, report))
 
@@ -228,8 +343,8 @@ def run_evaluation(
     confirmed = len(selected) - awaiting
     caveats: list[str] = [
         (
-            f"**样本量只有 {len(selected)} 条**，按类别分组后每类仅 2–3 条；"
-            "因此这些指标应视为**初步结果**，不足以支撑统计显著性结论。"
+            f"本次评测 {len(selected)} 条用例；按类别分组后每类 14–15 条。"
+            "样本量已明显改善，但仍是**自建测试集**，结论应表述为「初步结果」。"
         ),
         (
             "真值锚定方式：涉及文献的用例都用 Crossref **实测**确认过（年份/是否存在），"
@@ -292,6 +407,7 @@ def offline_settings(settings: Settings) -> Settings:
 
 
 __all__ = [
+    "BASELINE_B0",
     "BASELINE_B1",
     "BASELINE_B2",
     "EvaluationReport",

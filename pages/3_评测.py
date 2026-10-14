@@ -19,6 +19,7 @@ from verimind.core.enums import STATUS_DISPLAY_ORDER
 from verimind.core.errors import VeriMindError
 from verimind.evaluation.dataset import categories, load_golden_set
 from verimind.evaluation.runner import (
+    BASELINE_B0,
     BASELINE_B1,
     BASELINE_B2,
     EvaluationReport,
@@ -118,9 +119,9 @@ run_col1, run_col2, run_col3 = st.columns([2, 2, 1])
 with run_col1:
     baseline_label = st.radio(
         "选择评测配置",
-        [BASELINE_B2, BASELINE_B1],
+        [BASELINE_B2, BASELINE_B1, BASELINE_B0],
         index=0,
-        help="B2 是完整流程（会调用模型与外部检索）；B1 是离线规则引擎 + 不检索，完全免费，作为下界参照。",
+        help="B2 是完整流程（模型 + 外部检索）；B1 是离线规则引擎 + 不检索（免费下界）；B0 是直接问模型、不给任何外部证据（对照「直接问模型」）。",
     )
 with run_col2:
     chosen_categories = st.multiselect(
@@ -151,7 +152,9 @@ else:
     st.caption(f"当前配置不调用真实模型（{selected_count} 条用例，零成本）。")
 
 if run_clicked:
-    active_settings = settings if baseline_label == BASELINE_B2 else offline_settings(settings)
+    active_settings = (
+        offline_settings(settings) if baseline_label == BASELINE_B1 else settings
+    )
     progress_bar = st.progress(0.0, text="准备中…")
     status_box = st.status("正在评测…", expanded=True)
 
@@ -339,7 +342,7 @@ st.markdown(
     f"- **{BASELINE_B2}**：本项目的完整流程（拆解 → 检索 → 裁决 → 修正 → 复核）。\n"
     f"- **{BASELINE_B1}**：离线规则引擎 + 不检索，**完全免费**，用来给出一个下界参照"
     "（如果完整流程连它都赢不了，那就说明外部证据与模型没有带来价值）。\n"
-    "- **B0（让原模型自己检查自己）尚未实现**：未经实际运行的对照数据不纳入本表——"
+    f"- **{BASELINE_B0}**：同一个模型、单次调用、**不给任何外部证据**——对照「直接问模型」这件事本身。它的证据可追溯率必然为 0（定义如此），而误报率显著高于完整流程。\n"
     "宁可缺一行，也不编一行。"
 )
 st.caption(

@@ -502,6 +502,14 @@ class VerificationResult(VeriMindModel):
     )
     role_positions: list[RolePosition] = Field(default_factory=list)
     adjudication_rule: str = Field(default="", description="命中的规则编号与说明（可解释性）")
+    judged_without_evidence: bool = Field(
+        default=False,
+        description=(
+            "是否在**没有任何外部证据**的情况下作出的判断（仅 B0 基线使用）。"
+            "置为 True 时必须在 rationale 里写明依据来自模型自身知识，"
+            "报告与界面据此显著标注——不允许让它看起来像有证据支撑的结论。"
+        ),
+    )
 
     @model_validator(mode="after")
     def _enforce_evidence_contract(self) -> "VerificationResult":
@@ -516,16 +524,31 @@ class VerificationResult(VeriMindModel):
             raise ValueError(
                 f"{self.claim_id} 的状态为「{self.status.value}」，必须指明至少一个问题类型。"
             )
-        if bad and not evidence_refs:
+        if bad and not evidence_refs and not self.judged_without_evidence:
             raise ValueError(
                 f"{self.claim_id} 的状态为「{self.status.value}」，但没有任何证据 ID。"
                 "没有证据就不允许判定主张有问题。"
+                "（若确为无证据判断，必须显式设置 judged_without_evidence=True 以自曝来源。）"
             )
-        if self.status is VerificationStatus.VERIFIED and not self.supporting_evidence_ids:
+        if self.judged_without_evidence and not self.rationale.strip():
+            raise ValueError(
+                f"{self.claim_id} 标记为「无证据判断」，必须写明依据（rationale），"
+                "否则无法与有证据的结论区分。"
+            )
+        if (
+            self.status is VerificationStatus.VERIFIED
+            and not self.supporting_evidence_ids
+            and not self.judged_without_evidence
+        ):
             raise ValueError(
                 f"{self.claim_id} 判定为「已核实」，必须给出至少一条支持性证据。"
+                "（若确为无证据判断，必须显式设置 judged_without_evidence=True 以自曝来源。）"
             )
-        if self.status is VerificationStatus.SOURCE_CONFLICT and len(evidence_refs) < 2:
+        if (
+            self.status is VerificationStatus.SOURCE_CONFLICT
+            and len(evidence_refs) < 2
+            and not self.judged_without_evidence
+        ):
             raise ValueError(
                 f"{self.claim_id} 判定为「来源冲突」，至少需要两条来源不一致的证据。"
             )
