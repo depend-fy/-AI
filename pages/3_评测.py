@@ -21,7 +21,7 @@ from verimind.evaluation.dataset import categories, load_golden_set
 from verimind.evaluation.runner import (
     BASELINE_B0,
     BASELINE_B1,
-    BASELINE_B2,
+    BASELINE_RULES,
     EvaluationReport,
     offline_settings,
     run_evaluation,
@@ -119,7 +119,7 @@ run_col1, run_col2, run_col3 = st.columns([2, 2, 1])
 with run_col1:
     baseline_label = st.radio(
         "选择评测配置",
-        [BASELINE_B2, BASELINE_B1, BASELINE_B0],
+        [BASELINE_B1, BASELINE_B0],
         index=0,
         help="B2 是完整流程（模型 + 外部检索）；B1 是离线规则引擎 + 不检索（免费下界）；B0 是直接问模型、不给任何外部证据（对照「直接问模型」）。",
     )
@@ -142,7 +142,7 @@ selected_count = len(
     [case for case in cases if not chosen_categories or case.category in chosen_categories]
 )
 selected_count = min(selected_count, int(limit))
-if baseline_label == BASELINE_B2 and settings.llm_provider != "mock":
+if baseline_label == BASELINE_B1 and settings.llm_provider != "mock":
     st.caption(
         f"预计调用模型 {selected_count * 2}–{selected_count * 4} 次"
         "（每条用例：拆解 + 事实审查 + 可能还有证据审查/修正/复核）。"
@@ -153,7 +153,7 @@ else:
 
 if run_clicked:
     active_settings = (
-        offline_settings(settings) if baseline_label == BASELINE_B1 else settings
+        offline_settings(settings) if baseline_label == BASELINE_RULES else settings
     )
     progress_bar = st.progress(0.0, text="准备中…")
     status_box = st.status("正在评测…", expanded=True)
@@ -182,7 +182,12 @@ if run_clicked:
 
 # ---------------------------------------------------------------- 已保存的结果
 EVALUATIONS_DIR = PROJECT_ROOT / "evaluations"
-saved_files = sorted(EVALUATIONS_DIR.glob("*.json")) if EVALUATIONS_DIR.exists() else []
+saved_files = (
+    # 离线规则引擎仅作内部下界参照，不参与主对比，因此不列入数据来源
+    [item for item in sorted(EVALUATIONS_DIR.glob("*.json")) if "rules" not in item.name]
+    if EVALUATIONS_DIR.exists()
+    else []
+)
 
 st.divider()
 st.markdown("#### 评测存档")
@@ -209,6 +214,67 @@ else:
         st.error(f"读取评测存档失败：{exc}")
         report = None
 
+# ---------------------------------------------------------------- 核心对比（B0 vs B1）
+def _load_archive(prefix: str) -> "EvaluationReport | None":
+    """读取指定前缀的最新一份存档；读不到就返回 None（不让整页崩掉）。"""
+    matches = sorted(EVALUATIONS_DIR.glob(f"{prefix}*.json")) if EVALUATIONS_DIR.exists() else []
+    if not matches:
+        return None
+    try:
+        return EvaluationReport.model_validate(
+            json.loads(matches[-1].read_text(encoding="utf-8"))
+        )
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _pct(value: object) -> str:
+    return "—" if value is None else f"{float(value) * 100:.1f}%"
+
+
+baseline_archive = _load_archive("b0-")
+method_archive = _load_archive("b1-")
+
+if baseline_archive is not None and method_archive is not None:
+    st.divider()
+    st.markdown("#### 核心对比：直接问模型 vs 本项目方法")
+    st.caption(
+        "同一批 " + str(baseline_archive.case_count) + " 条用例、**同一个模型**；"
+        "两者唯一的差别是：B0 不给任何外部证据，B1 执行完整的证据核验流程。"
+    )
+    rows = [
+        ("精确率", "detection_precision"),
+        ("召回率", "detection_recall"),
+        ("F1", "detection_f1"),
+        ("误报率（越低保越好）", "false_positive_rate"),
+        ("六状态完全一致率", "status_accuracy"),
+        ("证据可追溯率", "evidence_traceability_rate"),
+        ("修正成功率", "correction_success_rate"),
+        ("新增错误率", "new_error_rate"),
+    ]
+    b0m, b1m = baseline_archive.metrics, method_archive.metrics
+    table = [
+        "| 指标 | B0 直接问模型 | **B1 本项目方法** |",
+        "| --- | --- | --- |",
+    ]
+    for label, key in rows:
+        table.append(f"| {label} | {_pct(b0m.get(key))} | **{_pct(b1m.get(key))}** |")
+    st.markdown("\n".join(table))
+
+    fpr0 = b0m.get("false_positive_rate")
+    fpr1 = b1m.get("false_positive_rate")
+    tr0 = b0m.get("evidence_traceability_rate")
+    tr1 = b1m.get("evidence_traceability_rate")
+    if fpr0 is not None and fpr1 is not None:
+        st.markdown(
+            f"> 直接问模型时，**{_pct(fpr0)}** 的正确内容会被判成有问题，"
+            f"且结论无法追问（证据可追溯率 {_pct(tr0)}）；"
+            f"本项目把误报率降到 **{_pct(fpr1)}**，并让 **{_pct(tr1)}** 的结论可点开证据。"
+        )
+elif method_archive is not None and baseline_archive is None:
+    st.divider()
+    st.caption("缺少 B0 存档，暂时无法展示对比。可用命令行生成：`--baseline b0 --all`。")
+
 # ---------------------------------------------------------------- 结果
 if report is None:
     st.info("还没有评测结果。选择配置后点「运行评测」即可——先跑 3–5 条小样本确认流程正常，再跑全量。")
@@ -221,7 +287,8 @@ if report.metric("total_llm_calls") == 0 and settings.llm_provider != "mock":
     )
 
 st.divider()
-st.markdown(f"#### 评测结果：{report.baseline}")
+st.markdown("#### 详细数据")
+st.caption(f"数据来源：{report.baseline}")
 st.caption(
     f"运行时间：{report.created_at.astimezone():%Y-%m-%d %H:%M:%S}　｜　"
     f"引擎：{report.engine_summary}　｜　用例数：{report.case_count}"
@@ -339,8 +406,8 @@ for caveat in report.caveats:
 st.divider()
 st.markdown("##### 基线说明")
 st.markdown(
-    f"- **{BASELINE_B2}**：本项目的完整流程（拆解 → 检索 → 裁决 → 修正 → 复核）。\n"
-    f"- **{BASELINE_B1}**：离线规则引擎 + 不检索，**完全免费**，用来给出一个下界参照"
+    f"- **{BASELINE_B1}**：本项目的完整流程（拆解 → 检索 → 裁决 → 修正 → 独立复核）。\n"
+    f"- **{BASELINE_RULES}**：内部下界参照，**不参与主对比**，仅在无密钥时可作为免费降级路径"
     "（如果完整流程连它都赢不了，那就说明外部证据与模型没有带来价值）。\n"
     f"- **{BASELINE_B0}**：同一个模型、单次调用、**不给任何外部证据**——对照「直接问模型」这件事本身。它的证据可追溯率必然为 0（定义如此），而误报率显著高于完整流程。\n"
     "宁可缺一行，也不编一行。"

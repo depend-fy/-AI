@@ -42,11 +42,14 @@ from verimind.evaluation.metrics import CaseOutcome, compute_metrics, summarize_
 from verimind.models.base import CallBudget, LLMClient, build_client
 from verimind.review.independent_review import extract_facts
 
-#: 评测基线标识。
-#: B0 对照的是「直接问模型」（同一个模型、不给任何外部证据），
-#: B1 对照的是「没有模型」（离线规则引擎 + 不检索），B2 是本项目的完整流程。
-BASELINE_B2 = "B2 证据增强（本项目完整流程）"
-BASELINE_B1 = "B1 离线规则引擎 + 不检索（下界参照）"
+#: 评测基线标识（展示用标签）。
+#:
+#: B0 = 直接问模型：同一个模型、单次调用、不给任何外部证据——对照「直接问模型」这件事本身。
+#: B1 = 本项目方法：证据核验 Agent 的完整流程（拆解 → 检索 → 裁决 → 修正 → 独立复核）。
+#: 对照 = 离线规则引擎 + 不检索：内部下界参照，**不参与主对比**，
+#:        保留它是因为在没有密钥时它是可用的免费降级路径。
+BASELINE_B1 = "B1 证据核验 Agent（本项目方法）"
+BASELINE_RULES = "对照：离线规则引擎（不检索）"
 
 
 class EvaluationRow(VeriMindModel):
@@ -296,7 +299,7 @@ def run_evaluation(
     settings: Settings,
     cases: list[GoldenCase] | None = None,
     golden_path: Path | None = None,
-    baseline: str = BASELINE_B2,
+    baseline: str = BASELINE_B1,
     limit: int | None = None,
     only_categories: list[str] | None = None,
     only_case_ids: list[str] | None = None,
@@ -409,7 +412,7 @@ def offline_settings(settings: Settings) -> Settings:
 __all__ = [
     "BASELINE_B0",
     "BASELINE_B1",
-    "BASELINE_B2",
+    "BASELINE_RULES",
     "EvaluationReport",
     "EvaluationRow",
     "offline_settings",

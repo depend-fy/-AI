@@ -38,7 +38,7 @@ from verimind.core.schemas import (
 )
 from verimind.evaluation.dataset import GoldenCase, load_golden_set, match_claim
 from verimind.evaluation.metrics import CaseOutcome, compute_metrics, summarize_failures
-from verimind.evaluation.runner import BASELINE_B1, offline_settings, run_evaluation
+from verimind.evaluation.runner import BASELINE_RULES, offline_settings, run_evaluation
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GOLDEN = PROJECT_ROOT / "examples" / "golden_set.jsonl"
@@ -288,14 +288,14 @@ def test_offline_evaluation_runs_and_reports_caveats(tmp_path: Path) -> None:
     report = run_evaluation(
         settings=offline_settings(base),
         cases=cases,
-        baseline=BASELINE_B1,
+        baseline=BASELINE_RULES,
         limit=3,
     )
 
     assert report.case_count == 3
     assert len(report.rows) == 3
     assert report.metrics["case_count"] == 3
-    assert report.baseline == BASELINE_B1
+    assert report.baseline == BASELINE_RULES
     assert "离线规则引擎" in report.engine_summary
 
     joined = " ".join(report.caveats)
