@@ -1,0 +1,447 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>agnes:local:local-dev:cli:workspace:6b89c77f6ededb10</title><style>:root{color-scheme:light dark}body{font:14px/1.5 system-ui,sans-serif;max-width:52rem;margin:2rem auto;padding:0 1rem;color:#1c211e;background:#fff}.meta,.minor{color:#69707a;font-size:12px}.meta{border-bottom:1px solid #d6dbd5;margin-bottom:1rem;padding-bottom:.5rem}.node{margin:.7rem 0}.user{background:#f3f5f4;border-radius:6px;padding:.6rem}.assistant{padding:.6rem}.tool{border:1px solid #d6dbd5;border-radius:6px;padding:.4rem .6rem;color:#4d555f}.approval{border-left:3px solid #0e6b54;padding:.4rem .6rem}.content{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.label{font-weight:600}.attachment{display:block}.compaction{text-align:center}@media(prefers-color-scheme:dark){body{color:#e7ece8;background:#151816}.user{background:#242925}.tool{border-color:#454c47;color:#c5ccc7}.meta,.minor{color:#abb3ad}}</style></head><body><header class="meta">agnes:local:local-dev:cli:workspace:6b89c77f6ededb10 · 2026-10-14T08:36:52.023Z · redacted · 29 items</header><main><section class="node user"><div class="label">User · local</div><div class="content">请读取当前目录下 README.md 的前 5 行，原文照抄给我，不要做其他操作。</div></section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content"></div></section>
+<details class="node tool"><summary>read · completed</summary><div class="content">read
+{&quot;limit&quot;:5,&quot;path&quot;:&quot;README.md&quot;}
+1	# 智鉴 AI（VeriMind AI）
+2	
+3	&gt; 多模型协同的 AI 幻觉检测、证据溯源、错误归因与自动修正系统 —— **Demo 版**
+4	
+5	把「相信一个模型」换成「一条可审计的校验流水线」：每条结论都能追问一句 **&quot;你凭什么这么说？&quot;**</div></details>
+<section class="node minor">$0.002467 (estimated) · inference</section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content">README.md 前 5 行原文如下：
+
+```
+# 智鉴 AI（VeriMind AI）
+
+&gt; 多模型协同的 AI 幻觉检测、证据溯源、错误归因与自动修正系统 —— **Demo 版**
+
+把「相信一个模型」换成「一条可审计的校验流水线」：每条结论都能追问一句 **&quot;你凭什么这么说？&quot;**
+```
+
+说明：第 2、4 行为空行；第 5 行在文件中到此结束（无更多可见字符）。未做其他操作。</div></section>
+<section class="node minor">$0.000252 (estimated) · inference</section>
+<section class="node minor">$0.000242 (estimated) · title</section>
+<section class="node user"><div class="label">User · local</div><div class="content">请在当前目录依次执行以下两条命令，并原样报告结果：(1) .\.venv\Scripts\python.exe -m pytest -q   (2) .\.venv\Scripts\python.exe scripts\run_demo.py --id real_doi_wrong_claim  。汇报时请给出：每条命令的退出状态、以及输出中的关键数字（测试通过数、主张条数、状态分布、检索与模型调用次数）。不要修改任何文件。</div></section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content">I&#39;ll run the two commands in sequence, without modifying any files.</div></section>
+<details class="node tool"><summary>shell · failed</summary><div class="content">shell
+{&quot;command&quot;:&quot;.\\.venv\\Scripts\\python.exe -m pytest -q; \&quot;EXIT=$LASTEXITCODE\&quot;&quot;,&quot;cwd&quot;:&quot;&lt;workspace&gt;\\verimind-ai&quot;,&quot;timeoutMs&quot;:600000}
+the user rejected this action; do not retry the same call without asking</div></details>
+<section class="node minor">$0.000266 (estimated) · inference</section>
+<section class="node approval"><span class="label">Approval · rejected</span><div class="content">shell .\.venv\Scripts\python.exe -m pytest -q; &quot;EXIT=$LASTEXITCODE&quot; cwd=&quot;&lt;workspace&gt;\\verimind-ai&quot; timeoutMs=600000</div></section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content">The first command was rejected, so I stopped there — I did not run either command and made no changes to any files.
+
+Status:
+
+- Command (1) `\.\.venv\Scripts\python.exe -m pytest -q`: **rejected by you**, not executed.
+- Command (2) `\.\.venv\Scripts\python.exe scripts\run_demo.py --id real_doi_wrong_claim`: **not run**, because I ran them in order and (1) never executed.
+
+I did not retry the rejected call, and I have no results to report: no exit status, no test pass count, no claim count, no status distribution, and no retrieval or model-call counts exist for this session.
+
+If you&#39;d like to proceed, tell me how you want to adjust it — for example:
+
+- authorize just the pytest command first, then the demo command separately;
+- change flags (e.g. drop `-q`, add `-rA` for a clearer summary);
+- or run the demo script alone.
+
+Note that the demo could involve model calls (which may need network or API credentials); if that&#39;s the reason for the rejection, say so and I&#39;ll skip it.</div></section>
+<section class="node minor">$0.000419 (estimated) · inference</section>
+<section class="node user"><div class="label">User · local</div><div class="content">请只读取文件（不要执行任何命令、不要修改任何文件）。依次阅读当前目录下的 README.md、evaluations/b0-direct-100.json、evaluations/b1-agent-100.json 这三个文件，然后用一张表格报告 B0（直接问模型）与 B1（本项目方法）在精确率、召回率、F1、误报率、证据可追溯率五项指标上的数值，并给出一句话结论。</div></section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content">I&#39;ll read the three files, read-only.</div></section>
+<details class="node tool"><summary>read · completed</summary><div class="content">read
+{&quot;path&quot;:&quot;README.md&quot;}
+1	# 智鉴 AI（VeriMind AI）
+2	
+3	&gt; 多模型协同的 AI 幻觉检测、证据溯源、错误归因与自动修正系统 —— **Demo 版**
+4	
+5	把「相信一个模型」换成「一条可审计的校验流水线」：每条结论都能追问一句 **&quot;你凭什么这么说？&quot;**
+6	
+7	---
+8	
+9	## 一、当前进度（如实标注）
+10	
+11	| 阶段 | 内容 | 状态 |
+12	| --- | --- | --- |
+13	| 阶段 0 | 需求冻结与技术方案（见 `docs/00-stage0-scope-and-design.md`） | ✅ 已完成 |
+14	| 阶段 1 | 开发环境与项目骨架 | ✅ 已完成 |
+15	| 阶段 2 | 基础检测流程（离线可跑） | ✅ 已完成 |
+16	| 阶段 3 | 接入真实大模型（交叉比对、缓存、成本统计、失败降级） | ✅ 已完成 |
+17	| 阶段 4 | 文献检索与证据核验（Crossref / OpenAlex / arXiv） | ✅ 已完成 |
+18	| 阶段 5 | 修正与独立复核（角色 C 修正 / 角色 D 复核） | ✅ 已完成 |
+19	| 阶段 6 | 测试与评测（人工标注集、指标、基线对比） | ✅ 已完成 |
+20	| 阶段 7 | 比赛展示准备（演示脚本、架构、实验报告、答辩材料） | ✅ 已完成（**当前**） |
+21	
+22	### 展示材料（阶段 7 产出）
+23	
+24	| 文档 | 内容 |
+25	| --- | --- |
+26	| [`docs/07-demo-script.md`](docs/07-demo-script.md) | 8 分钟四幕演示脚本：每幕的输入、真实预期输出、话术、断网兜底、11 张截图清单 |
+27	| [`docs/07-architecture-and-innovation.md`](docs/07-architecture-and-innovation.md) | 技术架构图 + 11 步数据流 + **五个核心创新点** + 角色分工 |
+28	| [`docs/07-experiment-and-defense.md`](docs/07-experiment-and-defense.md) | 实验设置与真实结果、**10 条局限**、后续规划、**12 个答辩 Q&amp;A**、讲稿要点 |
+29	
+30	&gt; | [docs/智鉴AI-演示PPT.pptx](docs/智鉴AI-演示PPT.pptx) | **15 页可编辑演示 PPT**：真实数据表格、失败案例、局限页，并在对应页标出 11 张截图的插入位置（由 scripts/make_ppt.py 可重新生成） |
+31	
+32	&gt; 这三份材料也可以**在应用里直接浏览**：首页导航 → **🎬 展示与答辩**。
+33	&gt; 该页面直接渲染 docs/ 下的 Markdown（单一数据源，改文档即改网页），
+34	&gt; 并附带**实时状态**：当前运行模式与引擎、标注集人工确认进度、最近检测记录，以及「已能做什么 / 还不能做什么」。
+35	
+36	### 现在能做什么
+37	
+38	1. 用**真实大模型**把文本拆解成可单独核验的原子事实主张（含精确到字符的原文位置）；
+39	2. **同时**用规则引擎独立拆解一遍，两个引擎的差异全部写进报告的「引擎交叉比对」；
+40	3. 真的去 **Crossref / OpenAlex / arXiv** 检索文献，核验「文献是否存在」「年份/期刊是否一致」，
+41	   并在拿到摘要时判断「内容结论是否被支持」（必须引用摘要原句才算数）；
+42	4. 检查**原文内部的矛盾**（同一 DOI 两个年份、同一指标两个数值）；
+43	5. 角色分工：事实审查员（该查什么）、证据审查员（证据说了什么）、
+44	   修正员（最小改动建议）、独立复核员（从怀疑立场审查修正）；
+45	   最终状态仍由**可解释的规则表**裁决；
+46	6. **只采用复核通过的修正**：复核员的语义判断 + 三项确定性检查（是否有证据、是否与证据匹配、是否凭空编造），
+47	   任何一项不过就不改；连&quot;复核没跑成功&quot;也算不通过；
+48	7. 报告里每条外部证据都可点击、可追溯，并附原始响应留档路径；输出「修正前 vs 修正后」全文对照。
+49	
+50	### 现在还不能做什么（重要）
+51	
+52	| 做不到的事 | 什么时候能补上 |
+53	| --- | --- |
+54	| 阅读论文**全文**（现在最多读到摘要） | 可做但未做：arXiv / 开放获取全文解析留到后续 |
+55	| 核验中文文献（没有 DOI 的中文来源） | **不在计划内**——Crossref/OpenAlex 没有中文库的公开 API |
+56	| 核验非学术的日常事实（新闻、政策、产品参数） | 需要付费检索服务，暂不做 |
+57	| —（已实现）| 已在 **100 条**人工确认的标注集上给出精确率、召回率、误报率等指标，见下文「评测结果」 |
+58	
+59	&gt; **核心边界**：「文献是真的」和「文献真的这么说」是**两个问题**；
+60	&gt; 「改了」和「改对了」也是**两个问题**——所以修正必须过独立复核才允许进正文。
+61	
+62	&gt; **核心边界**：「文献是真的」和「文献真的这么说」是**两个问题**。
+63	&gt; 只有元数据时，系统只回答前者；要回答后者必须有摘要或全文。
+64	
+65	---
+66	
+67	## 二、安装、快速开始与复现（Windows / PowerShell）
+68	
+69	### 2.1 安装（从零开始，约 3 分钟）
+70	
+71	```powershell
+72	cd &lt;项目目录&gt;
+73	
+74	# 1) 创建虚拟环境（Python 3.13）
+75	py -3.13 -m venv .venv
+76	
+77	# 2) 安装依赖
+78	.\.venv\Scripts\python.exe -m pip install --upgrade pip
+79	.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+80	
+81	# 3) 配置（复制模板后填入模型 API Key；.env 已被 .gitignore 排除，不会提交）
+82	Copy-Item .env.example .env
+83	
+84	# 4) 环境自检（依赖、配置、数据目录、外部 API 连通性）
+85	.\.venv\Scripts\python.exe scripts\check_env.py --network
+86	.\.venv\Scripts\python.exe scripts\check_llm.py
+87	```
+88	
+89	&gt; **无密钥也能跑**：不填 API Key 时系统进入「离线模拟」模式——界面、规则裁决、
+90	&gt; 检索与全部 **245 项自动化测试**均可运行（测试完全离线、零成本）。
+91	
+92	### 2.2 快速开始
+93	
+94	```powershell
+95	cd &lt;项目目录&gt;
+96	
+97	# 1) 不开网页先跑一遍（推荐先做这步）
+98	.\.venv\Scripts\python.exe scripts\run_demo.py --list
+99	.\.venv\Scripts\python.exe scripts\run_demo.py --id internal_conflict
+100	
+101	# 2) 启动界面
+102	powershell -ExecutionPolicy Bypass -File .\run.ps1
+103	```
+104	
+105	浏览器打开后：首页 → 「检测工作台」载入示例 → 「开始核验」→ 「检测报告」。
+106	
+107	### 2.3 环境自检脚本
+108	
+109	| 脚本 | 检查什么 |
+110	| --- | --- |
+111	| `scripts/check_env.py --network` | Python 版本、依赖、配置、数据目录、Crossref/OpenAlex/arXiv 连通性 |
+112	| `scripts/check_llm.py` | 大模型密钥是否被读到（**只显示脱敏值**）、发一次极小请求验证可用性，并对 401/402/404/超时给出处理建议 |
+113	| `scripts/run_demo.py` | 命令行完整跑一次检测并打印报告（断网也能用作离线演示） |
+114	
+115	### 2.4 复现实验结果
+116	
+117	以下命令可在任何环境下复现本仓库的全部实验结论：
+118	
+119	```powershell
+120	cd &lt;项目目录&gt;
+121	
+122	# ① 全量自动化测试（离线、零成本）
+123	.\.venv\Scripts\python.exe -m pytest -q                       # 期望：245 passed
+124	
+125	# ② 单条完整报告（真实模型 + 真实检索；含独立复核五项结论）
+126	.\.venv\Scripts\python.exe scripts\run_demo.py --id real_doi_</div></details>
+<details class="node tool"><summary>read · completed</summary><div class="content">read
+{&quot;path&quot;:&quot;evaluations/b0-direct-100.json&quot;}
+1	{
+2	  &quot;created_at&quot;: &quot;2026-10-14T06:35:53.736984Z&quot;,
+3	  &quot;baseline&quot;: &quot;B0 直接问模型（无外部证据）&quot;,
+4	  &quot;engine_summary&quot;: &quot;deepseek/deepseek-chat + 独立复核 agnes/agnes-3.0-flash&quot;,
+5	  &quot;case_count&quot;: 100,
+6	  &quot;rows&quot;: [
+7	    {
+8	      &quot;case_id&quot;: &quot;G01&quot;,
+9	      &quot;category&quot;: &quot;正确事实&quot;,
+10	      &quot;text&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年（DOI: 10.1038/nature14539）。&quot;,
+11	      &quot;gold_status&quot;: &quot;已核实&quot;,
+12	      &quot;predicted_status&quot;: &quot;已核实&quot;,
+13	      &quot;matched&quot;: true,
+14	      &quot;matched_claim_quote&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年（DOI: 10.1038/nature14539）。&quot;,
+15	      &quot;gold_problem_types&quot;: [],
+16	      &quot;predicted_problem_types&quot;: [],
+17	      &quot;evidence_ids&quot;: [],
+18	      &quot;evidence_urls&quot;: [],
+19	      &quot;corrections&quot;: 0,
+20	      &quot;corrections_applied&quot;: 0,
+21	      &quot;corrected_text&quot;: null,
+22	      &quot;new_fact_tokens&quot;: [],
+23	      &quot;run_id&quot;: &quot;cbe6be5183e64576a8a6aa8639919f16&quot;,
+24	      &quot;latency_ms&quot;: 0,
+25	      &quot;llm_calls&quot;: 0,
+26	      &quot;retrieval_queries&quot;: 0,
+27	      &quot;notes&quot;: &quot;年份与注册记录一致，期望判为已核实（仅核到「文献存在 + 书目信息」层面）。&quot;
+28	    },
+29	    {
+30	      &quot;case_id&quot;: &quot;G02&quot;,
+31	      &quot;category&quot;: &quot;正确事实&quot;,
+32	      &quot;text&quot;: &quot;Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年（DOI: 10.1162/neco.1997.9.8.1735）。&quot;,
+33	      &quot;gold_status&quot;: &quot;已核实&quot;,
+34	      &quot;predicted_status&quot;: &quot;已核实&quot;,
+35	      &quot;matched&quot;: true,
+36	      &quot;matched_claim_quote&quot;: &quot;Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年（DOI: 10.1162/neco.1997.9.8.1735）。&quot;,
+37	      &quot;gold_problem_types&quot;: [],
+38	      &quot;predicted_problem_types&quot;: [],
+39	      &quot;evidence_ids&quot;: [],
+40	      &quot;evidence_urls&quot;: [],
+41	      &quot;corrections&quot;: 0,
+42	      &quot;corrections_applied&quot;: 0,
+43	      &quot;corrected_text&quot;: null,
+44	      &quot;new_fact_tokens&quot;: [],
+45	      &quot;run_id&quot;: &quot;82a91ed34b6348118e527a8831d05444&quot;,
+46	      &quot;latency_ms&quot;: 0,
+47	      &quot;llm_calls&quot;: 0,
+48	      &quot;retrieval_queries&quot;: 0,
+49	      &quot;notes&quot;: &quot;真实文献 + 正确年份。&quot;
+50	    },
+51	    {
+52	      &quot;case_id&quot;: &quot;G03&quot;,
+53	      &quot;category&quot;: &quot;正确事实&quot;,
+54	      &quot;text&quot;: &quot;AlphaGo 的研究成果发表于 2016 年（DOI: 10.1038/nature16961）。&quot;,
+55	      &quot;gold_status&quot;: &quot;已核实&quot;,
+56	      &quot;predicted_status&quot;: &quot;已核实&quot;,
+57	      &quot;matched&quot;: true,
+58	      &quot;matched_claim_quote&quot;: &quot;AlphaGo 的研究成果发表于 2016 年（DOI: 10.1038/nature16961）。&quot;,
+59	      &quot;gold_problem_types&quot;: [],
+60	      &quot;predicted_problem_types&quot;: [],
+61	      &quot;evidence_ids&quot;: [],
+62	      &quot;evidence_urls&quot;: [],
+63	      &quot;corrections&quot;: 0,
+64	      &quot;corrections_applied&quot;: 0,
+65	      &quot;corrected_text&quot;: null,
+66	      &quot;new_fact_tokens&quot;: [],
+67	      &quot;run_id&quot;: &quot;fb4324e3c4784f3db11e3b2e891d34b2&quot;,
+68	      &quot;latency_ms&quot;: 0,
+69	      &quot;llm_calls&quot;: 0,
+70	      &quot;retrieval_queries&quot;: 0,
+71	      &quot;notes&quot;: &quot;真实文献 + 正确年份。&quot;
+72	    },
+73	    {
+74	      &quot;case_id&quot;: &quot;G04&quot;,
+75	      &quot;category&quot;: &quot;明确错误事实&quot;,
+76	      &quot;text&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年（DOI: 10.1038/nature14539）。&quot;,
+77	      &quot;gold_status&quot;: &quot;存在矛盾&quot;,
+78	      &quot;predicted_status&quot;: &quot;存在矛盾&quot;,
+79	      &quot;matched&quot;: true,
+80	      &quot;matched_claim_quote&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年（DOI: 10.1038/nature14539）。&quot;,
+81	      &quot;gold_problem_types&quot;: [
+82	        &quot;时间、人物或机构信息错误&quot;
+83	      ],
+84	      &quot;predicted_problem_types&quot;: [
+85	        &quot;时间、人物或机构信息错误&quot;,
+86	        &quot;引用不存在或元数据不匹配&quot;
+87	      ],
+88	      &quot;evidence_ids&quot;: [],
+89	      &quot;evidence_urls&quot;: [],
+90	      &quot;corrections&quot;: 0,
+91	      &quot;corrections_applied&quot;: 0,
+92	      &quot;corrected_text&quot;: null,
+93	      &quot;new_fact_tokens&quot;: [],
+94	      &quot;run_id&quot;: &quot;76f670cf476c45eaba60892638315de3&quot;,
+95	      &quot;latency_ms&quot;: 0,
+96	      &quot;llm_calls&quot;: 0,
+97	      &quot;retrieval_queries&quot;: 0,
+98	      &quot;notes&quot;: &quot;年份写错 7 年，注册记录可证伪。&quot;
+99	    },
+100	    {
+101	      &quot;case_id&quot;: &quot;G05&quot;,
+102	      &quot;category&quot;: &quot;明确错误事实&quot;,
+103	      &quot;text&quot;: &quot;长短期记忆网络（LSTM）由 Hochreiter 与 Schmidhuber 于 2005 年提出（DOI: 10.1162/neco.1997.9.8.1735）。&quot;,
+104	      &quot;gold_status&quot;: &quot;存在矛盾&quot;,
+105	      &quot;predicted_status&quot;: &quot;存在矛盾&quot;,
+106	      &quot;matched&quot;: true,
+107	      &quot;matched_claim_quote&quot;: &quot;长短期记忆网络（LSTM）由 Hochreiter 与 Schmidhuber 于 2005 年提出&quot;,
+108	      &quot;gold_problem_types&quot;: [
+109	        &quot;时间、人物或机构信息错误&quot;
+110	      ],
+111	      &quot;predicted_problem_types&quot;: [
+112	        &quot;时间、人物或机构信息错</div></details>
+<details class="node tool"><summary>read · completed</summary><div class="content">read
+{&quot;path&quot;:&quot;evaluations/b1-agent-100.json&quot;}
+1	{
+2	  &quot;created_at&quot;: &quot;2026-10-14T06:35:56.652822Z&quot;,
+3	  &quot;baseline&quot;: &quot;B1 证据核验 Agent（本项目方法）&quot;,
+4	  &quot;engine_summary&quot;: &quot;deepseek/deepseek-chat + 独立复核 agnes/agnes-3.0-flash&quot;,
+5	  &quot;case_count&quot;: 100,
+6	  &quot;rows&quot;: [
+7	    {
+8	      &quot;case_id&quot;: &quot;G01&quot;,
+9	      &quot;category&quot;: &quot;正确事实&quot;,
+10	      &quot;text&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年（DOI: 10.1038/nature14539）。&quot;,
+11	      &quot;gold_status&quot;: &quot;已核实&quot;,
+12	      &quot;predicted_status&quot;: &quot;已核实&quot;,
+13	      &quot;matched&quot;: true,
+14	      &quot;matched_claim_quote&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年&quot;,
+15	      &quot;gold_problem_types&quot;: [],
+16	      &quot;predicted_problem_types&quot;: [],
+17	      &quot;evidence_ids&quot;: [
+18	        &quot;E001&quot;,
+19	        &quot;E002&quot;
+20	      ],
+21	      &quot;evidence_urls&quot;: [
+22	        &quot;https://doi.org/10.1038/nature14539&quot;,
+23	        &quot;https://doi.org/10.1038/nature14539&quot;
+24	      ],
+25	      &quot;corrections&quot;: 0,
+26	      &quot;corrections_applied&quot;: 0,
+27	      &quot;corrected_text&quot;: null,
+28	      &quot;new_fact_tokens&quot;: [],
+29	      &quot;run_id&quot;: &quot;3fa8303ec2b449519e8598670a63af01&quot;,
+30	      &quot;latency_ms&quot;: 219,
+31	      &quot;llm_calls&quot;: 0,
+32	      &quot;retrieval_queries&quot;: 1,
+33	      &quot;notes&quot;: &quot;年份与注册记录一致，期望判为已核实（仅核到「文献存在 + 书目信息」层面）。&quot;
+34	    },
+35	    {
+36	      &quot;case_id&quot;: &quot;G02&quot;,
+37	      &quot;category&quot;: &quot;正确事实&quot;,
+38	      &quot;text&quot;: &quot;Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年（DOI: 10.1162/neco.1997.9.8.1735）。&quot;,
+39	      &quot;gold_status&quot;: &quot;已核实&quot;,
+40	      &quot;predicted_status&quot;: &quot;部分支持&quot;,
+41	      &quot;matched&quot;: true,
+42	      &quot;matched_claim_quote&quot;: &quot;Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年&quot;,
+43	      &quot;gold_problem_types&quot;: [],
+44	      &quot;predicted_problem_types&quot;: [
+45	        &quot;缺少必要证据&quot;
+46	      ],
+47	      &quot;evidence_ids&quot;: [
+48	        &quot;E001&quot;,
+49	        &quot;E002&quot;
+50	      ],
+51	      &quot;evidence_urls&quot;: [
+52	        &quot;https://doi.org/10.1162/neco.1997.9.8.1735&quot;,
+53	        &quot;https://doi.org/10.1162/neco.1997.9.8.1735&quot;
+54	      ],
+55	      &quot;corrections&quot;: 3,
+56	      &quot;corrections_applied&quot;: 1,
+57	      &quot;corrected_text&quot;: &quot;据 Crossref/OpenAlex 收录的《Long Short-Term Memory》（1997）摘要，该文提出了一种名为长短期记忆（LSTM）的方法；其作者是否包含 Schmidhuber 尚未经摘要核实（DOI: 10.1162/neco.1997.9.8.1735）。&quot;,
+58	      &quot;new_fact_tokens&quot;: [],
+59	      &quot;run_id&quot;: &quot;a61331a8474b4716a1e2ecff8b43dba6&quot;,
+60	      &quot;latency_ms&quot;: 22,
+61	      &quot;llm_calls&quot;: 0,
+62	      &quot;retrieval_queries&quot;: 1,
+63	      &quot;notes&quot;: &quot;真实文献 + 正确年份。&quot;
+64	    },
+65	    {
+66	      &quot;case_id&quot;: &quot;G03&quot;,
+67	      &quot;category&quot;: &quot;正确事实&quot;,
+68	      &quot;text&quot;: &quot;AlphaGo 的研究成果发表于 2016 年（DOI: 10.1038/nature16961）。&quot;,
+69	      &quot;gold_status&quot;: &quot;已核实&quot;,
+70	      &quot;predicted_status&quot;: &quot;已核实&quot;,
+71	      &quot;matched&quot;: true,
+72	      &quot;matched_claim_quote&quot;: &quot;AlphaGo 的研究成果发表于 2016 年&quot;,
+73	      &quot;gold_problem_types&quot;: [],
+74	      &quot;predicted_problem_types&quot;: [],
+75	      &quot;evidence_ids&quot;: [
+76	        &quot;E001&quot;,
+77	        &quot;E002&quot;
+78	      ],
+79	      &quot;evidence_urls&quot;: [
+80	        &quot;https://doi.org/10.1038/nature16961&quot;,
+81	        &quot;https://doi.org/10.1038/nature16961&quot;
+82	      ],
+83	      &quot;corrections&quot;: 0,
+84	      &quot;corrections_applied&quot;: 0,
+85	      &quot;corrected_text&quot;: null,
+86	      &quot;new_fact_tokens&quot;: [],
+87	      &quot;run_id&quot;: &quot;bf6d81b96e50470f9e273320574914df&quot;,
+88	      &quot;latency_ms&quot;: 19,
+89	      &quot;llm_calls&quot;: 0,
+90	      &quot;retrieval_queries&quot;: 1,
+91	      &quot;notes&quot;: &quot;真实文献 + 正确年份。&quot;
+92	    },
+93	    {
+94	      &quot;case_id&quot;: &quot;G04&quot;,
+95	      &quot;category&quot;: &quot;明确错误事实&quot;,
+96	      &quot;text&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年（DOI: 10.1038/nature14539）。&quot;,
+97	      &quot;gold_status&quot;: &quot;存在矛盾&quot;,
+98	      &quot;predicted_status&quot;: &quot;存在矛盾&quot;,
+99	      &quot;matched&quot;: true,
+100	      &quot;matched_claim_quote&quot;: &quot;LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年&quot;,
+101	      &quot;gold_problem_types&quot;: [
+102	        &quot;时间、人物或机构信息错误&quot;
+103	      ],
+104	      &quot;predicted_problem_types&quot;: [
+105	        &quot;时间、人物或机构信息错误&quot;
+106	      ],
+107	      &quot;evidence_ids&quot;: [
+108	        &quot;E001&quot;,
+109	        &quot;E002&quot;
+110	      ],
+111	      &quot;evidence_urls&quot;: [
+112	        &quot;https://doi.org/10.1038/nature14539&quot;,
+113	        &quot;https://doi.org/10.1038/nature14539&quot;
+114	      ],
+115	      &quot;corrections&quot;: 1,
+116	      &quot;corrections_applied&quot;: 1,
+117	      &quot;corrected_text&quot;: &quot;LeCun、Bengio 与 Hinton 的深</div></details>
+<section class="node minor">$0.000248 (estimated) · inference</section>
+<section class="node minor">Context breakdown · 4 sections · 1226 tokens (estimated)</section>
+<section class="node assistant"><div class="label">Assistant</div><div class="content">这三个文件我都读了开头部分，但有一个关键问题必须先说明：**这两个 JSON 文件各约 3000 行，我目前只读到每个文件的第 700 多行（覆盖 G01–G26 左右，100 条中的前 26 条）**。文件里没有现成的汇总指标字段（我看到的顶层字段只有 `created_at`、`baseline`、`engine_summary`、`case_count`、`rows`），所以要给出五项指标必须读完全部 200 行记录再统计。下面先把已确认的部分报告出来，然后请你决定怎么继续。
+
+**已确认的原文数据（来自 README.md 第 183–192 行表格）**
+
+| 指标 | B0 直接问模型 | B1 本项目方法 |
+| --- | --- | --- |
+| 精确率 | 61.4% | 97.6% |
+| 召回率 | 68.6% | 78.4% |
+| F1 | 64.8% | 87.0% |
+| 误报率 | 44.9% | 2.0% |
+| 证据可追溯率 | 0.0%（定义上为 0） | 69.0% |
+
+一句话结论：**同一模型、同一批 100 条用例下，B1 把精确率从 61.4% 提到 97.6%、误报率从 44.9% 压到 2.0%，并让 69.0% 的结论可追溯证据（B0 定义上为 0），代价是召回率只从 68.6% 升到 78.4%——即&quot;少冤枉、可追责&quot;是以&quot;更保守&quot;换来的。**
+
+**必须声明的三点限制**
+
+1. **上面这张表是 README 作者自己写好的汇总数字，不是我从两个 JSON 里算出来的。** 我没有对原始 100 条记录做任何统计。
+2. 我抽样看到的原始记录与 README 的叙述**方向一致**（例如 B0 在 G10、G25 把正确内容判成&quot;存在矛盾&quot;，即误报；B1 在这些条目上判&quot;已核实&quot;），但这只是前 26 条，不能替代全量核算。
+3. JSON 里还有一处 README 提到的波动：B0 的六状态一致率由 52.0% 变为 51.0%（100 条中有 1 条不同）——这属于模型判断的随机性，与指标口径有关。
+
+**关于&quot;误报率&quot;和&quot;证据可追溯率&quot;的定义**：README 没有给出这两个指标的计算公式，JSON 记录里也只有每条用例的 `gold_status`、`predicted_status`、`evidence_ids`、`evidence_urls` 等原始字段。要复算指标，我需要知道项目的口径（例如误报率的分母是&quot;金标正确的用例数&quot;还是&quot;预测为有问题的用例数&quot;）。项目源码在 `verimind/evaluation/metrics.py`，README 第 338 行注明&quot;指标计算（纯函数）&quot;——**读它才能确定口径，而不是我自己猜一个公式去算**。
+
+**建议的下一步（需要你选）**
+
+- **A**：我继续分批读完两个 JSON 的全部 200 条记录（每个文件再读 3–4 次，约 6–8 次读取调用），然后用你确认的口径自行统计五项指标，与 README 数字对照；
+- **B**：我只读 `verimind/evaluation/metrics.py`，把项目真实口径告诉你，再由你决定是否需要复算；
+- **C**：就采用 README 已公布的表格数字（即上面那张表），我不再做原始核算。
+
+后台执行我不会做——`enforcement` 为 unavailable，且你此前明确拒绝了命令执行，我也不会去跑 `run_evaluation.py` 或任何脚本。请告诉我选哪一项。</div></section>
+<section class="node minor">$0.010766 (estimated) · inference</section></main></body></html>
