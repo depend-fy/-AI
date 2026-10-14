@@ -1,0 +1,3128 @@
+{
+  "created_at": "2026-10-14T03:38:08.096494Z",
+  "baseline": "B2 证据增强（本项目完整流程）",
+  "engine_summary": "deepseek/deepseek-chat + 独立复核 agnes/agnes-3.0-flash",
+  "case_count": 100,
+  "rows": [
+    {
+      "case_id": "G01",
+      "category": "正确事实",
+      "text": "LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年（DOI: 10.1038/nature14539）。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14539",
+        "https://doi.org/10.1038/nature14539"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "78aea6a241d44175a90ab2623b92f9e4",
+      "latency_ms": 206,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份与注册记录一致，期望判为已核实（仅核到「文献存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G02",
+      "category": "正确事实",
+      "text": "Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年（DOI: 10.1162/neco.1997.9.8.1735）。",
+      "gold_status": "已核实",
+      "predicted_status": "部分支持",
+      "matched": true,
+      "matched_claim_quote": "Hochreiter 与 Schmidhuber 提出的长短期记忆网络发表于 1997 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "https://doi.org/10.1162/neco.1997.9.8.1735"
+      ],
+      "corrections": 3,
+      "corrections_applied": 1,
+      "corrected_text": "据 Crossref/OpenAlex 收录的《Long Short-Term Memory》（1997）摘要，该文提出了一种名为长短期记忆（LSTM）的方法；其作者是否包含 Schmidhuber 尚未经摘要核实（DOI: 10.1162/neco.1997.9.8.1735）。",
+      "new_fact_tokens": [],
+      "run_id": "0d0ee6880ced468a9004ecbc2ca96aff",
+      "latency_ms": 20,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份。"
+    },
+    {
+      "case_id": "G03",
+      "category": "正确事实",
+      "text": "AlphaGo 的研究成果发表于 2016 年（DOI: 10.1038/nature16961）。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "AlphaGo 的研究成果发表于 2016 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "8358c845267d4bb78b4478c2956c0dd4",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份。"
+    },
+    {
+      "case_id": "G04",
+      "category": "明确错误事实",
+      "text": "LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年（DOI: 10.1038/nature14539）。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "LeCun、Bengio 与 Hinton 的深度学习综述发表于 2008 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14539",
+        "https://doi.org/10.1038/nature14539"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "LeCun、Bengio 与 Hinton 的深度学习综述发表于 2015 年（DOI: 10.1038/nature14539）。",
+      "new_fact_tokens": [],
+      "run_id": "6658a506e0c244fb9cb5b8ba3bb30dad",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错 7 年，注册记录可证伪。"
+    },
+    {
+      "case_id": "G05",
+      "category": "明确错误事实",
+      "text": "长短期记忆网络（LSTM）由 Hochreiter 与 Schmidhuber 于 2005 年提出（DOI: 10.1162/neco.1997.9.8.1735）。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "部分支持",
+      "matched": true,
+      "matched_claim_quote": "长短期记忆网络（LSTM）由 Hochreiter 与 Schmidhuber 于 2005 年提出",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "https://doi.org/10.1162/neco.1997.9.8.1735"
+      ],
+      "corrections": 2,
+      "corrections_applied": 1,
+      "corrected_text": "长短期记忆网络（LSTM）由 Hochreiter 与 Schmidhuber 于 1997 年提出（DOI: 10.1162/neco.1997.9.8.1735）。",
+      "new_fact_tokens": [],
+      "run_id": "d1521b5bf5154c0f8cb08a725f10d7a4",
+      "latency_ms": 20,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 本身写作 neco.1997，与所述 2005 年自相矛盾，注册记录可证伪。"
+    },
+    {
+      "case_id": "G06",
+      "category": "明确错误事实",
+      "text": "DeepMind 团队关于 AlphaGo 的论文发表于 2011 年（DOI: 10.1038/nature16961）。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DeepMind 团队关于 AlphaGo 的论文发表于 2011 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "DeepMind 团队关于 AlphaGo 的论文发表于 2016 年（DOI: 10.1038/nature16961）。",
+      "new_fact_tokens": [],
+      "run_id": "61f17c4317cc44fb9ffcf09b7c6b369b",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错 5 年。"
+    },
+    {
+      "case_id": "G07",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.9999/verimind.fake.0001）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.9999/verimind.fake.0001",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 3,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实）（（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实））显示，据称该方法可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "6da153d1a885439986021284448df7be",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "该 DOI 在 Crossref 明确返回 404，属于虚构引用；同时数值 70% 无出处。"
+    },
+    {
+      "case_id": "G08",
+      "category": "虚构文献",
+      "text": "上述结论来自 10.1234/nonexistent.2023.001 所载的研究工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "上述结论来自 10.1234/nonexistent.2023.001 所载的研究工作。",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.1234/nonexistent.2023.001?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.1234/nonexistent.2023.001?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 1,
+      "corrections_applied": 0,
+      "corrected_text": "上述结论来自 10.1234/nonexistent.2023.001 所载的研究工作。",
+      "new_fact_tokens": [],
+      "run_id": "643e06b8ea53493ba44e04ae95f736c1",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 前缀合规但后缀不存在，Crossref 返回 404。"
+    },
+    {
+      "case_id": "G09",
+      "category": "虚构文献",
+      "text": "多篇论文（DOI: 10.9999/verimind.fake.0001）已经证实这一机制在人体中同样成立。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "多篇论文（DOI: 10.9999/verimind.fake.0001）已经证实这一机制在人体中同样成立。",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "多篇论文（DOI: 10.9999/verimind.fake.0001）据称这一机制在人体中同样成立（该说法所依据的文献尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "b6cccfa6ed074d7bbb35d90da76e76b0",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "虚构 DOI + 结论性表述。"
+    },
+    {
+      "case_id": "G10",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature12373）证明钙钛矿太阳能电池的转换效率可以轻松突破 50%。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature12373）证明钙钛矿太阳能电池的转换效率可以轻松突破 50%。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature12373",
+        "https://doi.org/10.1038/nature12373"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "21762973043849b2b7a8fa5597b9a953",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 真实存在（存在层面应判已核实），但该论文主题是纳米尺度测温，与「钙钛矿太阳能电池」完全无关。注意：本用例的 gold 只针对 DOI 存在性；主题错配目前只能靠摘要层面判断，而该文献在 OpenAlex 无摘要 → 系统会停在「证据不足」，属于已知局限（见 G11 说明）。"
+    },
+    {
+      "case_id": "G11",
+      "category": "真实文献但错误引用",
+      "text": "一项发表于 1997 年的研究（DOI: 10.1162/neco.1997.9.8.1735）提出了 Transformer 架构。",
+      "gold_status": "已核实",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "一项发表于 1997 年的研究（DOI: 10.1162/neco.1997.9.8.1735）提出了 Transformer 架构。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "387b84c9907f447e921bb32c130660ee",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份真实（应核实），但该论文是 LSTM 而非 Transformer——**这类「引用与结论不匹配」需要摘要或全文才能判断**；若拿不到摘要，系统应当停在「证据不足」而不是硬判。gold 只锚定可核验的年份部分。"
+    },
+    {
+      "case_id": "G12",
+      "category": "真实文献但错误引用",
+      "text": "AlexNet 的论文发表于《自然》杂志（DOI: 10.1145/3065386）。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "AlexNet 的论文发表于《自然》杂志",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "d5291704f92443948358b5408180f0de",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "该 DOI 真实存在（Communications of the ACM，2017），期刊名与《自然》不符。**已知局限**：跨语言的期刊名比对（《自然》 vs Nature/CACM）误报风险高，系统刻意不判错，只标「证据不足」——这一项属于可改进空间，标注刻意与系统的保守行为保持一致。"
+    },
+    {
+      "case_id": "G13",
+      "category": "证据不足",
+      "text": "多项研究表明，该方法的准确率显著优于现有方案。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "多项研究表明，该方法的准确率显著优于现有方案。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "22141298f81945d7bb82a9632900d3e4",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威表述，没有具体来源。"
+    },
+    {
+      "case_id": "G14",
+      "category": "证据不足",
+      "text": "据统计，该行业市场规模在 2023 年已达到 1200 亿元。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该行业市场规模在 2023 年已达到 1200 亿元",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ca7bef4b959849469e063e4129768a70",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "具体数值但没有可核验出处；学术界数据库也查不到行业统计。"
+    },
+    {
+      "case_id": "G15",
+      "category": "证据不足",
+      "text": "该方案在多个城市的试点覆盖率已经达到较高水平。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该方案在多个城市的试点覆盖率已经达到较高水平。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "75e1abbde7204f8286f736e2ebda3348",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "中文自由文本、没有任何可检索标识：既不能证伪也不能证实，属于「证据不足」而非「错误」。"
+    },
+    {
+      "case_id": "G16",
+      "category": "来源冲突",
+      "text": "该研究于 2015 年发表（DOI: 10.1038/nature14539）。同一篇 2008 年的论文（DOI: 10.1038/nature14539）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2008 年的论文（DOI: 10.1038/nature14539）",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E009",
+        "E010"
+      ],
+      "evidence_urls": [
+        "原文内部：2008 年",
+        "原文内部：2015 年"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "该研究于 2015 年发表（DOI: 10.1038/nature14539）。同一篇论文（DOI: 10.1038/nature14539，年份尚未核实）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "c23009758f504d4c92ca534a006f1f96",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G17",
+      "category": "来源冲突",
+      "text": "实验显示模型准确率提高到 95%。同一段落又提到，模型准确率为 78%。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "模型准确率为 78%。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "原文内部：78%",
+        "原文内部：95%"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "6af82046bfb64edaa23062b291841c34",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文里出现两个数值。"
+    },
+    {
+      "case_id": "G18",
+      "category": "来源冲突",
+      "text": "Hochreiter 于 1997 年提出 LSTM（DOI: 10.1162/neco.1997.9.8.1735）；另有一处参考文献称这篇 2010 年的论文（DOI: 10.1162/neco.1997.9.8.1735）奠定了序列建模的基础。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "另有一处参考文献称这篇 2010 年的论文（DOI: 10.1162/neco.1997.9.8.1735）",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E009",
+        "E010"
+      ],
+      "evidence_urls": [
+        "原文内部：1997 年",
+        "原文内部：2010 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 1,
+      "corrected_text": "Hochreiter 于 1997 年提出 LSTM（DOI: 10.1162/neco.1997.9.8.1735）；另有一处参考文献称这篇论文（DOI: 10.1162/neco.1997.9.8.1735，其年份在原文中另有 1997 年之说，尚未核实）奠定了序列建模的基础。",
+      "new_fact_tokens": [],
+      "run_id": "91841ade7f2f40c580b6f95a9911c2e5",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一 DOI 两个年份，且与真实年份（1997）都不同。"
+    },
+    {
+      "case_id": "G19",
+      "category": "修正质量",
+      "text": "DeepMind 关于 AlphaGo 的研究发表于 2011 年（DOI: 10.1038/nature16961），并在围棋上击败了人类冠军。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DeepMind 关于 AlphaGo 的研究发表于 2011 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "DeepMind 关于 AlphaGo 的研究发表于 2016 年（DOI: 10.1038/nature16961），并在围棋上击败了人类冠军。",
+      "new_fact_tokens": [],
+      "run_id": "23854736228e4b2c8a5ffd53bc875b76",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望系统把年份改为 2016（有 Crossref + OpenAlex 双重证据），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G20",
+      "category": "修正质量",
+      "text": "该研究（DOI: 10.1162/neco.1997.9.8.1735）证明 LSTM 在所有序列建模任务上都达到了 100% 的准确率。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1162/neco.1997.9.8.1735）证明 LSTM 在所有序列建模任务上都达到了 100% 的准确率。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "https://doi.org/10.1162/neco.1997.9.8.1735"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "c1ca293ef0cd4f7181f34060604906e1",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "该数值显然不可信但**没有证据可反驳**：正确行为是标「证据不足」，修正只能弱化/删除，**绝不能改成一个新数字**。若系统把 100% 改成别的具体数值，则计入「新增错误」。"
+    },
+    {
+      "case_id": "G21",
+      "category": "正确事实",
+      "text": "Nanometre-scale thermometry in a living cell（DOI: 10.1038/nature12373）发表于 2013 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2013 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature12373",
+        "https://doi.org/10.1038/nature12373"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "35bd91ef0bbe490497500f77bbb48baf",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G22",
+      "category": "正确事实",
+      "text": "Deep learning（DOI: 10.1038/nature14539）发表于 2015 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "Deep learning（DOI: 10.1038/nature14539）发表于 2015 年。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14539",
+        "https://doi.org/10.1038/nature14539"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3ee6157a4b994caaac4476606e5e1f23",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G23",
+      "category": "正确事实",
+      "text": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 1997 年。",
+      "gold_status": "已核实",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 1997 年。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "16e0be09b3b84ee48e3725bdc7b08a72",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G24",
+      "category": "正确事实",
+      "text": "Mastering the game of Go with deep neural networks and tree search（DOI: 10.1038/nature16961）发表于 2016 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2016 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "dd4a8c896d53456eb357161ec2333b9e",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G25",
+      "category": "正确事实",
+      "text": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）发表于 2017 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2017 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1145/3065386",
+        "https://doi.org/10.1145/3065386"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "93cefd04758f499294c984114f7edb97",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G26",
+      "category": "正确事实",
+      "text": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）发表于 2015 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2015 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14236",
+        "https://doi.org/10.1038/nature14236"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "612d960584974015871a15862f9acf32",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G27",
+      "category": "正确事实",
+      "text": "Observation of Gravitational Waves from a Binary Black Hole Merger（DOI: 10.1103/PhysRevLett.116.061102）发表于 2016 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2016 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1103/physrevlett.116.061102",
+        "https://doi.org/10.1103/physrevlett.116.061102"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "b63d1a45a85b43a8a854672b1269b276",
+      "latency_ms": 28,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G28",
+      "category": "正确事实",
+      "text": "Array programming with NumPy（DOI: 10.1038/s41586-020-2649-2）发表于 2020 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "Array programming with NumPy（DOI: 10.1038/s41586-020-2649-2）发表于 2020 年。",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/s41586-020-2649-2",
+        "https://doi.org/10.1038/s41586-020-2649-2"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "0d98c0df6bcf4b71837cc4bc70ce5c13",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G29",
+      "category": "正确事实",
+      "text": "Safety and Efficacy of the BNT162b2 mRNA Covid-19 Vaccine（DOI: 10.1056/NEJMoa2034577）发表于 2020 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2020 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1056/nejmoa2034577",
+        "https://doi.org/10.1056/nejmoa2034577"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "589c7d102f83427cb78b94e9c2932696",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G30",
+      "category": "正确事实",
+      "text": "The genomic history of southeastern Europe（DOI: 10.1038/nature25778）发表于 2018 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2018 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature25778",
+        "https://doi.org/10.1038/nature25778"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3c768e2594484b1097696a4282e63a96",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G31",
+      "category": "正确事实",
+      "text": "Hallmarks of Cancer: The Next Generation（DOI: 10.1016/j.cell.2011.02.013）发表于 2011 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2011 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1016/j.cell.2011.02.013",
+        "https://doi.org/10.1016/j.cell.2011.02.013"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "0ef53a1f7c7348b6ad934f851f8de68f",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G32",
+      "category": "正确事实",
+      "text": "Itaconate is an anti-inflammatory metabolite that activates Nrf2 via a（DOI: 10.1038/nature25986）发表于 2018 年。",
+      "gold_status": "已核实",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "发表于 2018 年",
+      "gold_problem_types": [],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature25986",
+        "https://doi.org/10.1038/nature25986"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "4e89c4da1b1048d58a813aa175db1c65",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "真实文献 + 正确年份，期望判为已核实（只核到「存在 + 书目信息」层面）。"
+    },
+    {
+      "case_id": "G33",
+      "category": "明确错误事实",
+      "text": "Nanometre-scale thermometry in a living cell（DOI: 10.1038/nature12373）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature12373",
+        "https://doi.org/10.1038/nature12373"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Nanometre-scale thermometry in a living cell（DOI: 10.1038/nature12373）发表于 2013 年。",
+      "new_fact_tokens": [],
+      "run_id": "42656f998b5640f5bdf39b4d2fbd8926",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2013 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G34",
+      "category": "明确错误事实",
+      "text": "Deep learning（DOI: 10.1038/nature14539）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "Deep learning（DOI: 10.1038/nature14539）发表于 2001 年。",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14539",
+        "https://doi.org/10.1038/nature14539"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Deep learning（DOI: 10.1038/nature14539）发表于 2015 年。",
+      "new_fact_tokens": [],
+      "run_id": "1b8ac025d7214a7b8b112d7b10685aa2",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2015 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G35",
+      "category": "明确错误事实",
+      "text": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 2001 年。",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 1997 年。",
+      "new_fact_tokens": [],
+      "run_id": "a35911ef1fa648709de07c9e6e3d0116",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 1997 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G36",
+      "category": "明确错误事实",
+      "text": "Mastering the game of Go with deep neural networks and tree search（DOI: 10.1038/nature16961）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Mastering the game of Go with deep neural networks and tree search（DOI: 10.1038/nature16961）发表于 2016 年。",
+      "new_fact_tokens": [],
+      "run_id": "4fefb93c532d46559ba409f6df47cf1a",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2016 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G37",
+      "category": "明确错误事实",
+      "text": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）发表于 2001 年。",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）发表于 2017 年。",
+      "new_fact_tokens": [],
+      "run_id": "c3fb69dfdf8a49339b35886010e651cf",
+      "latency_ms": 22,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2017 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G38",
+      "category": "明确错误事实",
+      "text": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）发表于 2001 年。",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14236",
+        "https://doi.org/10.1038/nature14236"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）发表于 2015 年。",
+      "new_fact_tokens": [],
+      "run_id": "179e303bbc9c44909237974855434684",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2015 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G39",
+      "category": "明确错误事实",
+      "text": "Observation of Gravitational Waves from a Binary Black Hole Merger（DOI: 10.1103/PhysRevLett.116.061102）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1103/physrevlett.116.061102",
+        "https://doi.org/10.1103/physrevlett.116.061102"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Observation of Gravitational Waves from a Binary Black Hole Merger（DOI: 10.1103/PhysRevLett.116.061102）发表于 2016 年。",
+      "new_fact_tokens": [],
+      "run_id": "0db97a5279594f1da38f5fd6ce62e907",
+      "latency_ms": 29,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2016 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G40",
+      "category": "明确错误事实",
+      "text": "Array programming with NumPy（DOI: 10.1038/s41586-020-2649-2）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "Array programming with NumPy（DOI: 10.1038/s41586-020-2649-2）发表于 2001 年。",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/s41586-020-2649-2",
+        "https://doi.org/10.1038/s41586-020-2649-2"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Array programming with NumPy（DOI: 10.1038/s41586-020-2649-2）发表于 2020 年。",
+      "new_fact_tokens": [],
+      "run_id": "277599313a8b4b04992d8863d672d9e2",
+      "latency_ms": 21,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2020 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G41",
+      "category": "明确错误事实",
+      "text": "Safety and Efficacy of the BNT162b2 mRNA Covid-19 Vaccine（DOI: 10.1056/NEJMoa2034577）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1056/nejmoa2034577",
+        "https://doi.org/10.1056/nejmoa2034577"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Safety and Efficacy of the BNT162b2 mRNA Covid-19 Vaccine（DOI: 10.1056/NEJMoa2034577）发表于 2020 年。",
+      "new_fact_tokens": [],
+      "run_id": "52489b321f7d4f1594f52d9fdfcf117f",
+      "latency_ms": 20,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2020 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G42",
+      "category": "明确错误事实",
+      "text": "The genomic history of southeastern Europe（DOI: 10.1038/nature25778）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature25778",
+        "https://doi.org/10.1038/nature25778"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "The genomic history of southeastern Europe（DOI: 10.1038/nature25778）发表于 2018 年。",
+      "new_fact_tokens": [],
+      "run_id": "8965189699fe48b18d365c4520f1a3fb",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2018 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G43",
+      "category": "明确错误事实",
+      "text": "Hallmarks of Cancer: The Next Generation（DOI: 10.1016/j.cell.2011.02.013）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1016/j.cell.2011.02.013",
+        "https://doi.org/10.1016/j.cell.2011.02.013"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Hallmarks of Cancer: The Next Generation（DOI: 10.1016/j.cell.2011.02.013）发表于 2011 年。",
+      "new_fact_tokens": [],
+      "run_id": "5dff113ba3cb42799f459f25a5a3747a",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2011 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G44",
+      "category": "明确错误事实",
+      "text": "Itaconate is an anti-inflammatory metabolite that activates Nrf2 via a（DOI: 10.1038/nature25986）发表于 2001 年。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature25986",
+        "https://doi.org/10.1038/nature25986"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Itaconate is an anti-inflammatory metabolite that activates Nrf2 via a（DOI: 10.1038/nature25986）发表于 2018 年。",
+      "new_fact_tokens": [],
+      "run_id": "ae7a3e84e1704895ae3cd4d5e4c0f4a5",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "年份写错（实际 2018 年），注册记录可证伪。"
+    },
+    {
+      "case_id": "G45",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.1126/science.169.3946.1071）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.1126/science.169.3946.1071",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.1126/science.169.3946.1071?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.1126/science.169.3946.1071?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 4,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的 DOI 未能在 Crossref 与 OpenAlex 中检索到，其存在性尚未核实）（DOI 未能在 Crossref 与 OpenAlex 中检索到）显示，该方法据称可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "3a68c73904b241baad44319687e863cf",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G46",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.9999/verimind.fake.0001）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.9999/verimind.fake.0001",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.9999/verimind.fake.0001?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 3,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实）（（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实））显示，据称该方法可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "f957a18e110a4666af8cc0878b9deef2",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G47",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.1234/nonexistent.2023.001）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.1234/nonexistent.2023.001",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.1234/nonexistent.2023.001?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.1234/nonexistent.2023.001?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 3,
+      "corrections_applied": 0,
+      "corrected_text": "据一项发表于 2023 年的研究（DOI: 10.1234/nonexistent.2023.001）显示，该方法可将训练成本降低 70%。",
+      "new_fact_tokens": [],
+      "run_id": "70e5ad511bb94a1b9dc64e29a6b7eb4c",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G48",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.9999/verimind.fake.0002）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.9999/verimind.fake.0002",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.9999/verimind.fake.0002?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.9999/verimind.fake.0002?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 4,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实）（DOI 未在 Crossref 与 OpenAlex 中登记）显示，据称该方法可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "f114a3d9fa114bd89cf1125d0df614ee",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G49",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.5555/verimind.fake.0003）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.5555/verimind.fake.0003",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.5555/verimind.fake.0003?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.5555/verimind.fake.0003?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 4,
+      "corrections_applied": 2,
+      "corrected_text": "据一项研究（该文献的 DOI 未在 Crossref 与 OpenAlex 中登记，尚未核实）（DOI: 10.5555/verimind.fake.0003）显示，该方法据称可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "d93cf732ec2f46bbb7c61cc6af9ea19a",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G50",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.1234/not.a.real.doi.9999）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.1234/not.a.real.doi.9999",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.1234/not.a.real.doi.9999?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.1234/not.a.real.doi.9999?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 4,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的发表年份与 DOI 均无法核实）（该文献的 DOI 无法核实）显示，据称该方法可降低训练成本（具体数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "32ab9c6bb9fb435e950598cca8fc5844",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G51",
+      "category": "虚构文献",
+      "text": "据一项发表于 2023 年的研究（DOI: 10.9999/verimind.fake.0004）显示，该方法可将训练成本降低 70%。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "DOI: 10.9999/verimind.fake.0004",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [
+        "E003",
+        "E004"
+      ],
+      "evidence_urls": [
+        "https://api.crossref.org/works/10.9999/verimind.fake.0004?mailto=2824819622%40qq.om",
+        "https://api.openalex.org/works/https://doi.org/10.9999/verimind.fake.0004?mailto=2824819622%40qq.om"
+      ],
+      "corrections": 4,
+      "corrections_applied": 3,
+      "corrected_text": "据一项研究（该文献的 DOI 未能在 Crossref 与 OpenAlex 中检索到，尚未核实）（DOI 未能在 Crossref 与 OpenAlex 中检索到）显示，该方法据称可将训练成本降低 70%（该数值尚未核实）。",
+      "new_fact_tokens": [],
+      "run_id": "0c22d2b64aa24b898ec22989350445f2",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "DOI 格式合规但注册机构无此记录，属于虚构引用。"
+    },
+    {
+      "case_id": "G52",
+      "category": "虚构文献",
+      "text": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.001），已被多个团队重复验证。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.001）",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3db64a27748a4ad2a778585debaf1fbf",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "DOI 格式不合规，注册机构不接受该写法，无法提交检索。"
+    },
+    {
+      "case_id": "G53",
+      "category": "虚构文献",
+      "text": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.002），已被多个团队重复验证。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.002）",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "53034aa690cb429093b93c66f31d7c91",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "DOI 格式不合规，注册机构不接受该写法，无法提交检索。"
+    },
+    {
+      "case_id": "G54",
+      "category": "虚构文献",
+      "text": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.003），已被多个团队重复验证。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.003）",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "a36ba0b214cb49c4b9f707b79336fb0c",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "DOI 格式不合规，注册机构不接受该写法，无法提交检索。"
+    },
+    {
+      "case_id": "G55",
+      "category": "虚构文献",
+      "text": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.004），已被多个团队重复验证。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该结论来自一项重要研究（DOI: 10.xxxx/verimind.2023.004）",
+      "gold_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "predicted_problem_types": [
+        "引用不存在或元数据不匹配"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "b2fb18fa8942418ca4fdd418774815e8",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "DOI 格式不合规，注册机构不接受该写法，无法提交检索。"
+    },
+    {
+      "case_id": "G56",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature12373）证明了钙钛矿太阳能电池的转换效率可以突破 50%。",
+      "gold_status": "证据不足",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature12373）证明了钙钛矿太阳能电池的转换效率可以突破 50%。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature12373",
+        "https://doi.org/10.1038/nature12373"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "99975b46cd7946c28b9a14e77017a40d",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G57",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature14539）提出了 Transformer 架构并取代了循环网络。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature14539）提出了 Transformer 架构",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14539",
+        "https://doi.org/10.1038/nature14539"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ac04ebf0a925485e9285a22c01de54d7",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G58",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1162/neco.1997.9.8.1735）证明所有序列建模任务都能用单一模型解决。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "证明所有序列建模任务都能用单一模型解决",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "https://doi.org/10.1162/neco.1997.9.8.1735"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "00f582536ffd48f583e7dfbc85b1109f",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G59",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature16961）证明围棋之外的所有棋类都已被人工智能攻克。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature16961）证明围棋之外的所有棋类都已被人工智能攻克。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature16961",
+        "https://doi.org/10.1038/nature16961"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ab313bd022dc4c49819fa63f91a7b37c",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G60",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1145/3065386）证明卷积网络在医学影像诊断上已超过人类医生。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1145/3065386）证明卷积网络在医学影像诊断上已超过人类医生。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1145/3065386",
+        "https://doi.org/10.1145/3065386"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "f60b2a359e1241eca09f03d812e1bb9b",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G61",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature14236）证明强化学习可以直接用于临床手术决策。",
+      "gold_status": "证据不足",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature14236）证明强化学习可以直接用于临床手术决策。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14236",
+        "https://doi.org/10.1038/nature14236"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "1670c126ef3d4d0485f862d119094c49",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G62",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1103/PhysRevLett.116.061102）证明引力波可以被用于星际通信。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1103/PhysRevLett.116.061102）证明引力波可以被用于星际通信。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "50207a4ff7b74d76bd343803ce4e1f5b",
+      "latency_ms": 26,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G63",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/s41586-020-2649-2）证明 NumPy 可以替代所有深度学习框架。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/s41586-020-2649-2）证明 NumPy 可以替代所有深度学习框架。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "f07dc9ae0a1a48d2a551dc6fa6566446",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G64",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1056/NEJMoa2034577）证明该疫苗对全部变异株的有效率均为 100%。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1056/NEJMoa2034577）证明该疫苗对全部变异株的有效率均为 100%。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1056/nejmoa2034577",
+        "https://doi.org/10.1056/nejmoa2034577"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ac31617c54554566b15ffcb7f4fd68e7",
+      "latency_ms": 20,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G65",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1038/nature25778）证明欧洲人群的基因完全来源于单一迁徙事件。",
+      "gold_status": "证据不足",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature25778）证明欧洲人群的基因完全来源于单一迁徙事件。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature25778",
+        "https://doi.org/10.1038/nature25778"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "05dd886d796743758561aa9ad716e069",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。"
+    },
+    {
+      "case_id": "G66",
+      "category": "真实文献但错误引用",
+      "text": "该研究（DOI: 10.1016/j.cell.2011.02.013）证明所有癌症都可以通过单一靶点治愈。",
+      "gold_status": "证据不足",
+      "predicted_status": "暂无法核验",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1016/j.cell.2011.02.013）证明所有癌症都可以通过单一靶点治愈。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "67009c11734941e7b53dc7da0c871a1d",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "文献真实存在（DOI 可核验），但所述内容与该文献主题不符。**已知局限**：判断「引用与结论不匹配」需要摘要或全文，拿不到时系统只能停在「证据不足」——这是保守但诚实的处理。（2026-10-13 记：本条曾被误改为「暂无法核验」，已回退。）"
+    },
+    {
+      "case_id": "G67",
+      "category": "证据不足",
+      "text": "多项研究表明，该方法的准确率显著优于现有方案。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "多项研究表明，该方法的准确率显著优于现有方案。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3988445928f14af389cec80751399c85",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G68",
+      "category": "证据不足",
+      "text": "据统计，该行业市场规模在 2023 年已达到 1200 亿元。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该行业市场规模在 2023 年已达到 1200 亿元",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "b2c75f37f2734cc5b9959ce0eee97327",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G69",
+      "category": "证据不足",
+      "text": "业内专家普遍认为，该技术将在五年内全面普及。",
+      "gold_status": "暂无法核验",
+      "predicted_status": "暂无法核验",
+      "matched": true,
+      "matched_claim_quote": "业内专家普遍认为，该技术将在五年内全面普及。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "27e73833335c4da2a8a0ebbc84141ae6",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "**标注已校正（2026-10-13）**：该句含预测性表述（「将在五年内全面普及」），拆解环节将其标为不可核验，命中规则 U1 → 暂无法核验。原先标为「证据不足」是标注不够精确：证据不足指「可核验但缺证据」，而预测类内容本身就不该用事实证据判定对错。"
+    },
+    {
+      "case_id": "G70",
+      "category": "证据不足",
+      "text": "该方案在多个城市的试点覆盖率已经达到较高水平。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该方案在多个城市的试点覆盖率已经达到较高水平。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "15769bde0c244ea69731c402606e1745",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G71",
+      "category": "证据不足",
+      "text": "有关数据显示，用户满意度提升了两倍以上。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "用户满意度提升了两倍以上",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "20693a8b88ce41dba07a00c116bfe589",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G72",
+      "category": "证据不足",
+      "text": "据权威机构评估，该模型的风险等级为中等。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "据权威机构评估，该模型的风险等级为中等。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "7b6dba0bccb6489e92b7677322120977",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G73",
+      "category": "证据不足",
+      "text": "大量实验证实，这种方法在极端条件下依然稳定。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "大量实验证实，这种方法在极端条件下依然稳定。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "逻辑推断过度"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "37b1e3a615594e03b2f6c90dacbc8d83",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G74",
+      "category": "证据不足",
+      "text": "相关文献指出，该现象与气候变化的关联性很强。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "相关文献指出，该现象与气候变化的关联性很强。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "f10213ceb30a4fcbaaf2ce515daa575a",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G75",
+      "category": "证据不足",
+      "text": "调查结果显示，超过八成的受访者支持这一做法。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "超过八成的受访者支持这一做法",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "f09fd17e9a7c47ebabd994567202ae1a",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G76",
+      "category": "证据不足",
+      "text": "有报道称，该项目已获得主管部门的正式批准。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "有报道称，该项目已获得主管部门的正式批准。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3cfe6cd8f7c541d9b45e87b9f3ec0566",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "模糊权威或没有出处的表述，在公开学术来源中无法核验。"
+    },
+    {
+      "case_id": "G77",
+      "category": "证据不足",
+      "text": "经验表明，这种材料在长期使用中不会出现明显老化。",
+      "gold_status": "暂无法核验",
+      "predicted_status": "暂无法核验",
+      "matched": true,
+      "matched_claim_quote": "经验表明，这种材料在长期使用中不会出现明显老化。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ce4b4a82c1f84ac39ad585617b2851bd",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "**标注已校正（2026-10-13）**：含预测性表述（「不会出现明显老化」是对未来的断言），拆解为不可核验属合理。原先标为「证据不足」不够精确——证据不足指「可核验但缺证据」，而预测/判断类内容本身就不该用事实证据判定对错。"
+    },
+    {
+      "case_id": "G78",
+      "category": "来源冲突",
+      "text": "Nanometre-scale thermometry in a living cell（DOI: 10.1038/nature12373）发表于 2013 年。同一篇 2001 年的论文（DOI: 10.1038/nature12373）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1038/nature12373）给出了类似结论。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E011",
+        "E012"
+      ],
+      "evidence_urls": [
+        "原文内部：2001 年",
+        "原文内部：2013 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 2,
+      "corrected_text": "Nanometre-scale thermometry in a living cell（DOI: 10.1038/nature12373）发表年份在原文中前后不一致（2013 年 / 2001 年），该年份尚未核实。同一篇论文（其发表年份在原文中前后不一致，尚未核实）（DOI: 10.1038/nature12373）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "b810cc05753e49e3beef550728ef7be5",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G79",
+      "category": "来源冲突",
+      "text": "Deep learning（DOI: 10.1038/nature14539）发表于 2015 年。同一篇 2001 年的论文（DOI: 10.1038/nature14539）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1038/nature14539）给出了类似结论。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E009",
+        "E010"
+      ],
+      "evidence_urls": [
+        "原文内部：2001 年",
+        "原文内部：2015 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 2,
+      "corrected_text": "Deep learning（DOI: 10.1038/nature14539）发表年份存在冲突（原文另处标注为 2001 年，该年份尚未核实）。同一篇论文（年份存在冲突，原文另处标注为 2015 年，尚未核实）（DOI: 10.1038/nature14539）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "8d59b306f59947179561035e69f78023",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G80",
+      "category": "来源冲突",
+      "text": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 1997 年。同一篇 2001 年的论文（DOI: 10.1162/neco.1997.9.8.1735）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1162/neco.1997.9.8.1735）",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E011",
+        "E012"
+      ],
+      "evidence_urls": [
+        "原文内部：1997 年",
+        "原文内部：2001 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 2,
+      "corrected_text": "Long Short-Term Memory（DOI: 10.1162/neco.1997.9.8.1735）发表于 1997 年（该年份与原文另一处所述 2001 年存在冲突，尚未核实）。同一篇论文（DOI: 10.1162/neco.1997.9.8.1735，原文另处称其为 1997 年，年份存在冲突）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "53655d8d4a42494cadbbcf1d9e58b1aa",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G81",
+      "category": "来源冲突",
+      "text": "Mastering the game of Go with deep neural networks and tree search（DOI: 10.1038/nature16961）发表于 2016 年。同一篇 2001 年的论文（DOI: 10.1038/nature16961）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1038/nature16961）给出了类似结论。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E013",
+        "E014"
+      ],
+      "evidence_urls": [
+        "原文内部：2001 年",
+        "原文内部：2016 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 2,
+      "corrected_text": "Mastering the game of Go with deep neural networks and tree search（DOI: 10.1038/nature16961）其发表年份在原文中前后不一致（一处记为 2016 年，另一处记为 2001 年），该年份尚未核实。同一篇论文（DOI: 10.1038/nature16961，其发表年份在原文中前后不一致，尚未核实）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "3340895f8fb74ea9942665f2b44e0784",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G82",
+      "category": "来源冲突",
+      "text": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）发表于 2017 年。同一篇 2001 年的论文（DOI: 10.1145/3065386）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1145/3065386）给出了类似结论。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E011",
+        "E012"
+      ],
+      "evidence_urls": [
+        "原文内部：2001 年",
+        "原文内部：2017 年"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "ImageNet classification with deep convolutional neural networks（DOI: 10.1145/3065386）的发表年份在原文中存在冲突（一处写作 2017 年，另一处写作 2001 年，尚未核实）。同一篇 2001 年的论文（DOI: 10.1145/3065386）给出了类似结论。",
+      "new_fact_tokens": [],
+      "run_id": "9cc6aba0febb4df5b4d784b9bf7fa9a1",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G83",
+      "category": "来源冲突",
+      "text": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）发表于 2015 年。同一篇 2001 年的论文（DOI: 10.1038/nature14236）给出了类似结论。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "同一篇 2001 年的论文（DOI: 10.1038/nature14236）给出了类似结论。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E011",
+        "E012"
+      ],
+      "evidence_urls": [
+        "原文内部：2001 年",
+        "原文内部：2015 年"
+      ],
+      "corrections": 2,
+      "corrections_applied": 2,
+      "corrected_text": "Human-level control through deep reinforcement learning（DOI: 10.1038/nature14236）其发表年份在原文中前后不一致（一处写作 2015 年，另一处写作 2001 年），该年份尚未核实。原文另一处称同一 DOI（10.1038/nature14236）的论文发表于 2001 年，与前述 2015 年冲突，该年份尚未核实，其结论是否类似亦待核实。",
+      "new_fact_tokens": [],
+      "run_id": "a34ff39f279343d489702ba03039a484",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "同一个 DOI 在原文里被写成两个年份——不需要外部证据即可确认矛盾。"
+    },
+    {
+      "case_id": "G84",
+      "category": "来源冲突",
+      "text": "实验显示模型准确率提高到 95%。同一段落又提到，模型准确率为 78%。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "模型准确率为 78%。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "原文内部：78%",
+        "原文内部：95%"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "921b22dac0ae4c2e91d210bdf65863ba",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文中出现两个互相冲突的数值。"
+    },
+    {
+      "case_id": "G85",
+      "category": "来源冲突",
+      "text": "报告称响应时间缩短至 120 毫秒。后文却写着响应时间约为 350 毫秒。",
+      "gold_status": "来源冲突",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "后文却写着响应时间约为 350 毫秒。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "71a7b922bbd34c15b2aca5ea95a0f078",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文中出现两个互相冲突的数值。"
+    },
+    {
+      "case_id": "G86",
+      "category": "来源冲突",
+      "text": "文中称样本量为 5000 例。方法部分写的是共纳入 3200 例。",
+      "gold_status": "来源冲突",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "文中称样本量为 5000 例。方法部分写的是共纳入 3200 例。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "9f69634a0d8e45e0b1762c93beb6591c",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文中出现两个互相冲突的数值。"
+    },
+    {
+      "case_id": "G87",
+      "category": "来源冲突",
+      "text": "摘要说覆盖率已达 90%。结论部分却说覆盖率不足 60%。",
+      "gold_status": "来源冲突",
+      "predicted_status": "来源冲突",
+      "matched": true,
+      "matched_claim_quote": "摘要说覆盖率已达 90%。结论部分却说覆盖率不足 60%。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "原文内部：60%",
+        "原文内部：90%"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "7d286d13324942759c641eb28cf97f3d",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文中出现两个互相冲突的数值。"
+    },
+    {
+      "case_id": "G88",
+      "category": "来源冲突",
+      "text": "第一部分给出增长率为 15%。附录里同一指标写的是 4%。",
+      "gold_status": "来源冲突",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "第一部分给出增长率为 15%。附录里同一指标写的是 4%。",
+      "gold_problem_types": [
+        "不同来源之间存在冲突"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3a9a3c4e2aa64bc88a5d034d7f821ee3",
+      "latency_ms": 15,
+      "llm_calls": 0,
+      "retrieval_queries": 0,
+      "notes": "同一指标在原文中出现两个互相冲突的数值。"
+    },
+    {
+      "case_id": "G89",
+      "category": "修正质量",
+      "text": "Optuna（DOI: 10.1145/3292500.3330701）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "Optuna（DOI: 10.1145/3292500.3330701）发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E003"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1145/3292500.3330701"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Optuna（DOI: 10.1145/3292500.3330701）发表于 2019 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "eac8b79be2074e0384c3e2ac70c2e1bf",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2019（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G90",
+      "category": "修正质量",
+      "text": "Entering Adolescence: Resistance to Peer Influence, Risky Behavior, an（DOI: 10.1016/j.neuron.2011.02.019）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1016/j.neuron.2011.02.019",
+        "https://doi.org/10.1016/j.neuron.2011.02.019"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Entering Adolescence: Resistance to Peer Influence, Risky Behavior, an（DOI: 10.1016/j.neuron.2011.02.019）发表于 2011 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "f508f6a58d144e169a96a75e17734e11",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2011（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G91",
+      "category": "修正质量",
+      "text": "A Fast Learning Algorithm for Deep Belief Nets（DOI: 10.1162/neco.2006.18.7.1527）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.2006.18.7.1527",
+        "https://doi.org/10.1162/neco.2006.18.7.1527"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "A Fast Learning Algorithm for Deep Belief Nets（DOI: 10.1162/neco.2006.18.7.1527）发表于 2006 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "521811b25882490f978882bc3612c5d5",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2006（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G92",
+      "category": "修正质量",
+      "text": "Deep Residual Learning for Image Recognition（DOI: 10.1109/CVPR.2016.90）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1109/cvpr.2016.90",
+        "https://doi.org/10.1109/cvpr.2016.90"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Deep Residual Learning for Image Recognition（DOI: 10.1109/CVPR.2016.90）发表于 2016 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "dc8144fc1ea84fad9ffb793781df53a6",
+      "latency_ms": 20,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2016（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G93",
+      "category": "修正质量",
+      "text": "Mastering the game of Go without human knowledge（DOI: 10.1038/nature24270）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature24270",
+        "https://doi.org/10.1038/nature24270"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Mastering the game of Go without human knowledge（DOI: 10.1038/nature24270）发表于 2017 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "0625eb7659f7460db5fb99aafd54bef5",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2017（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G94",
+      "category": "修正质量",
+      "text": "Nucleic acid detection with CRISPR-Cas13a/C2c2（DOI: 10.1126/science.aam9321）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1126/science.aam9321",
+        "https://doi.org/10.1126/science.aam9321"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "Nucleic acid detection with CRISPR-Cas13a/C2c2（DOI: 10.1126/science.aam9321）发表于 2017 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "4610951d36a94de5805568a27364b657",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2017（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G95",
+      "category": "修正质量",
+      "text": "The proximal origin of SARS-CoV-2（DOI: 10.1038/s41591-020-0820-9）发表于 2001 年，是该领域的重要工作。",
+      "gold_status": "存在矛盾",
+      "predicted_status": "存在矛盾",
+      "matched": true,
+      "matched_claim_quote": "发表于 2001 年",
+      "gold_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "predicted_problem_types": [
+        "时间、人物或机构信息错误"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/s41591-020-0820-9",
+        "https://doi.org/10.1038/s41591-020-0820-9"
+      ],
+      "corrections": 1,
+      "corrections_applied": 1,
+      "corrected_text": "The proximal origin of SARS-CoV-2（DOI: 10.1038/s41591-020-0820-9）发表于 2020 年，是该领域的重要工作。",
+      "new_fact_tokens": [],
+      "run_id": "b653fca9e6b340dc8b16a51a81196f0c",
+      "latency_ms": 19,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "期望把年份改为 2020（有注册记录支撑），且不得引入其它新事实。"
+    },
+    {
+      "case_id": "G96",
+      "category": "修正质量",
+      "text": "该研究（DOI: 10.1162/neco.1997.9.8.1735）证明 LSTM 在所有任务上达到 100% 准确率。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "证明 LSTM 在所有任务上达到 100% 准确率",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E005",
+        "E006"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1162/neco.1997.9.8.1735",
+        "https://doi.org/10.1162/neco.1997.9.8.1735"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "4bae34969f2e428bb37e07d6779c70bc",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "数值/结论显然夸张但**没有证据可反驳**：正确行为是标「证据不足」并只能弱化或删除，**绝不能改成一个新的具体数值**——若系统替换成别的数字，则计入「新增错误」。"
+    },
+    {
+      "case_id": "G97",
+      "category": "修正质量",
+      "text": "该方法（DOI: 10.1038/nature14539）已被证明可以解释全部智能现象。",
+      "gold_status": "证据不足",
+      "predicted_status": "暂无法核验",
+      "matched": true,
+      "matched_claim_quote": "该方法（DOI: 10.1038/nature14539）已被证明可以解释全部智能现象。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "7f12bff8ae60451da2572eeea569579f",
+      "latency_ms": 17,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "数值/结论显然夸张但**没有证据可反驳**：正确行为是标「证据不足」并只能弱化或删除，**绝不能改成一个新的具体数值**——若系统替换成别的数字，则计入「新增错误」。"
+    },
+    {
+      "case_id": "G98",
+      "category": "修正质量",
+      "text": "该成果（DOI: 10.1145/3065386）表明卷积网络可以处理任意模态的数据。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该成果（DOI: 10.1145/3065386）表明卷积网络可以处理任意模态的数据。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [
+        "缺少必要证据"
+      ],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1145/3065386",
+        "https://doi.org/10.1145/3065386"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "5d4528fc89e04048947b7029ea5cded0",
+      "latency_ms": 18,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "数值/结论显然夸张但**没有证据可反驳**：正确行为是标「证据不足」并只能弱化或删除，**绝不能改成一个新的具体数值**——若系统替换成别的数字，则计入「新增错误」。"
+    },
+    {
+      "case_id": "G99",
+      "category": "修正质量",
+      "text": "该研究（DOI: 10.1038/nature14236）证明强化学习可以解决全部现实决策问题。",
+      "gold_status": "证据不足",
+      "predicted_status": "已核实",
+      "matched": true,
+      "matched_claim_quote": "该研究（DOI: 10.1038/nature14236）证明强化学习可以解决全部现实决策问题。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [
+        "E001",
+        "E002"
+      ],
+      "evidence_urls": [
+        "https://doi.org/10.1038/nature14236",
+        "https://doi.org/10.1038/nature14236"
+      ],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "ff56c158f6d84abb8d37de1fb9e7dd3c",
+      "latency_ms": 16,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "数值/结论显然夸张但**没有证据可反驳**：正确行为是标「证据不足」并只能弱化或删除，**绝不能改成一个新的具体数值**——若系统替换成别的数字，则计入「新增错误」。"
+    },
+    {
+      "case_id": "G100",
+      "category": "修正质量",
+      "text": "该论文（DOI: 10.1103/PhysRevLett.116.061102）证明引力波可以被任意操控。",
+      "gold_status": "证据不足",
+      "predicted_status": "证据不足",
+      "matched": true,
+      "matched_claim_quote": "该论文（DOI: 10.1103/PhysRevLett.116.061102）证明引力波可以被任意操控。",
+      "gold_problem_types": [
+        "缺少必要证据"
+      ],
+      "predicted_problem_types": [],
+      "evidence_ids": [],
+      "evidence_urls": [],
+      "corrections": 0,
+      "corrections_applied": 0,
+      "corrected_text": null,
+      "new_fact_tokens": [],
+      "run_id": "3ac8713a7e944b85962ea61baaf7450e",
+      "latency_ms": 26,
+      "llm_calls": 0,
+      "retrieval_queries": 1,
+      "notes": "数值/结论显然夸张但**没有证据可反驳**：正确行为是标「证据不足」并只能弱化或删除，**绝不能改成一个新的具体数值**——若系统替换成别的数字，则计入「新增错误」。"
+    }
+  ],
+  "metrics": {
+    "case_count": 100,
+    "matched_count": 100,
+    "unmatched_count": 0,
+    "by_category": {
+      "正确事实": {
+        "cases": 15,
+        "matched": 15,
+        "correct": 13
+      },
+      "明确错误事实": {
+        "cases": 15,
+        "matched": 15,
+        "correct": 10
+      },
+      "虚构文献": {
+        "cases": 14,
+        "matched": 14,
+        "correct": 10
+      },
+      "真实文献但错误引用": {
+        "cases": 14,
+        "matched": 14,
+        "correct": 9
+      },
+      "证据不足": {
+        "cases": 14,
+        "matched": 14,
+        "correct": 14
+      },
+      "来源冲突": {
+        "cases": 14,
+        "matched": 14,
+        "correct": 11
+      },
+      "修正质量": {
+        "cases": 14,
+        "matched": 14,
+        "correct": 12
+      }
+    },
+    "true_positive": 40,
+    "false_positive": 1,
+    "false_negative": 11,
+    "true_negative": 48,
+    "detection_precision": 0.9756,
+    "detection_recall": 0.7843,
+    "detection_f1": 0.8696,
+    "false_positive_rate": 0.0204,
+    "status_accuracy": 0.79,
+    "evidence_traceability_rate": 0.69,
+    "avg_evidence_per_case": 1.37,
+    "correction_expected_cases": 29,
+    "correction_success_rate": 0.7931,
+    "residual_error_rate": 0.2069,
+    "new_error_rate": 0.0,
+    "corrections_applied_total": 58,
+    "avg_latency_ms": 20,
+    "total_llm_calls": 0,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_retrieval_queries": 76,
+    "avg_llm_calls_per_case": 0.0
+  },
+  "failures": [
+    {
+      "case_id": "G02",
+      "kind": "状态不一致",
+      "detail": "标注=已核实，预测=部分支持",
+      "gold": "已核实",
+      "predicted": "部分支持"
+    },
+    {
+      "case_id": "G05",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=部分支持",
+      "gold": "存在矛盾",
+      "predicted": "部分支持"
+    },
+    {
+      "case_id": "G11",
+      "kind": "状态不一致",
+      "detail": "标注=已核实，预测=证据不足",
+      "gold": "已核实",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G23",
+      "kind": "状态不一致",
+      "detail": "标注=已核实，预测=证据不足",
+      "gold": "已核实",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G35",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G37",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G38",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=已核实",
+      "gold": "存在矛盾",
+      "predicted": "已核实"
+    },
+    {
+      "case_id": "G40",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=已核实",
+      "gold": "存在矛盾",
+      "predicted": "已核实"
+    },
+    {
+      "case_id": "G52",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G53",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G54",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G55",
+      "kind": "状态不一致",
+      "detail": "标注=存在矛盾，预测=证据不足",
+      "gold": "存在矛盾",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G56",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=已核实",
+      "gold": "证据不足",
+      "predicted": "已核实"
+    },
+    {
+      "case_id": "G61",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=已核实",
+      "gold": "证据不足",
+      "predicted": "已核实"
+    },
+    {
+      "case_id": "G65",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=已核实",
+      "gold": "证据不足",
+      "predicted": "已核实"
+    },
+    {
+      "case_id": "G66",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=暂无法核验",
+      "gold": "证据不足",
+      "predicted": "暂无法核验"
+    },
+    {
+      "case_id": "G85",
+      "kind": "状态不一致",
+      "detail": "标注=来源冲突，预测=证据不足",
+      "gold": "来源冲突",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G86",
+      "kind": "状态不一致",
+      "detail": "标注=来源冲突，预测=证据不足",
+      "gold": "来源冲突",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G88",
+      "kind": "状态不一致",
+      "detail": "标注=来源冲突，预测=证据不足",
+      "gold": "来源冲突",
+      "predicted": "证据不足"
+    },
+    {
+      "case_id": "G97",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=暂无法核验",
+      "gold": "证据不足",
+      "predicted": "暂无法核验"
+    },
+    {
+      "case_id": "G99",
+      "kind": "状态不一致",
+      "detail": "标注=证据不足，预测=已核实",
+      "gold": "证据不足",
+      "predicted": "已核实"
+    }
+  ],
+  "caveats": [
+    "**样本量只有 100 条**，按类别分组后每类仅 2–3 条；因此这些指标应视为**初步结果**，不足以支撑统计显著性结论。",
+    "真值锚定方式：涉及文献的用例都用 Crossref **实测**确认过（年份/是否存在），构造类用例（证据不足、文内矛盾）的真值来自文本自身。",
+    "「新增错误率」由确定性规则计算：抽出修正后出现的年份/数值/DOI，检查它能否在原文或证据中找到依据；不是人工逐条判定。",
+    "被测系统与标注起草使用的是**同一个模型家族**，存在同源偏差（self-preference bias）风险；标注也未做双人独立标注，因此**没有计算标注一致性（如 Cohen's kappa）**。",
+    "**最重要的一条局限**：起草标注的人（AI）**知道系统是怎么实现的**，因此 gold 可能与系统能力过度贴合（自我实现偏差）——例如「跨语言期刊名不一致」这一项，标注刻意与系统的保守行为保持了一致。真正可靠的评测应由**不了解系统实现的人独立标注**，再与系统输出比对。",
+    "标注状态：本次涉及的用例中 **20/100 条已由人工逐条确认**，仍有 80 条为 AI 起草、等待人工抽查确认。在全部确认之前，请不要把这些数字对外表述为「人工标注结果」。",
+    "标注起草方式：AI 起草（与被测系统同一模型家族）；人工确认只判断「标注是否合理」，并未重新独立标注全文——因此它仍不能替代「由不知情者独立标注」的评测。"
+  ]
+}
